@@ -32,6 +32,8 @@ add_executable(grat_software
     src/core/auth/permission_checker.cpp
     src/ui/login_dialog.cpp
     src/ui/login_dialog.ui
+    src/ui/main_window.cpp
+    src/ui/main_window.ui
     resources/grat_schema.qrc
 )
 

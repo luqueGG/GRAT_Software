@@ -10,12 +10,12 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDialog>
-#include <QMainWindow>
 #include <QMessageBox>
 
 #include "core/auth/auth_service.h"
 #include "core/db/database.h"
 #include "ui/login_dialog.h"
+#include "ui/main_window.h"
 
 int main(int argc, char *argv[])
 {
@@ -47,9 +47,7 @@ int main(int argc, char *argv[])
 
     const AuthSession session = loginDialog.session();
 
-    QMainWindow window;
-    window.setWindowTitle(QStringLiteral("GRAT_Software — %1").arg(session.username));
-    window.resize(1024, 768);
+    MainWindow window(database, session);
     window.show();
 
     return app.exec();
