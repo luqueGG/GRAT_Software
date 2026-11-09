@@ -8,6 +8,7 @@
 
 #include <QList>
 #include <QString>
+#include <QVariantMap>
 #include <QWidget>
 
 #include "core/crud/table_spec.h"
@@ -35,6 +36,8 @@ public:
     void setMode(Mode mode);
     Mode mode() const;
 
+    void load(const QVariantMap &record);
+
     QString state() const;
     void setState(const QString &state);
 
@@ -45,16 +48,21 @@ private:
         QWidget *widget = nullptr;
         QComboBox *combo = nullptr;
         QLabel *stateLabel = nullptr;
+        bool referenceLoaded = true;
     };
 
     QWidget *createField(const ColumnSpec &column);
     QComboBox *createCombo(const ColumnSpec &column);
     void applyMode();
+    void populateRefValues();
+    void selectComboValue(Field &field, const QVariant &value);
+    void setWarning(const QString &message);
 
     const TableSpec &m_spec;
     TableGateway &m_gateway;
     const AuthSession &m_session;
     QFormLayout *m_layout = nullptr;
+    QLabel *m_warningLabel = nullptr;
     QList<Field> m_fields;
     QString m_state = QStringLiteral("A");
     Mode m_mode = Mode::ReadOnly;
