@@ -9,11 +9,13 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QDialog>
 #include <QMainWindow>
 #include <QMessageBox>
 
 #include "core/auth/auth_service.h"
 #include "core/db/database.h"
+#include "ui/login_dialog.h"
 
 int main(int argc, char *argv[])
 {
@@ -39,8 +41,14 @@ int main(int argc, char *argv[])
     if (!authService.ensureDefaultUsers(&seedError))
         qWarning().noquote() << seedError;
 
+    LoginDialog loginDialog(authService);
+    if (loginDialog.exec() != QDialog::Accepted)
+        return 0;
+
+    const AuthSession session = loginDialog.session();
+
     QMainWindow window;
-    window.setWindowTitle("GRAT_Software");
+    window.setWindowTitle(QStringLiteral("GRAT_Software — %1").arg(session.username));
     window.resize(1024, 768);
     window.show();
 
