@@ -3,6 +3,7 @@
 #include <QAbstractItemView>
 #include <QBrush>
 #include <QColor>
+#include <QDateTime>
 #include <QFont>
 #include <QFrame>
 #include <QGroupBox>
@@ -10,6 +11,7 @@
 #include <QHeaderView>
 #include <QItemSelectionModel>
 #include <QLabel>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSplitter>
@@ -18,6 +20,7 @@
 #include <QTableView>
 #include <QVBoxLayout>
 
+#include "core/auth/auth_service.h"
 #include "core/db/database.h"
 #include "ui/register_form.h"
 
@@ -84,6 +87,17 @@ CrudWidget::CrudWidget(Database &database, const TableSpec &spec,
     m_reactivateButton = makeButton(tr("Reactivate"), QStringLiteral("reactivateButton"));
     m_updateButton = makeButton(tr("Update"), QStringLiteral("updateButton"));
     m_cancelButton = makeButton(tr("Cancel"), QStringLiteral("cancelButton"));
+
+    connect(m_addButton, &QPushButton::clicked, this, &CrudWidget::startAdd);
+    connect(m_modifyButton, &QPushButton::clicked, this, &CrudWidget::startModify);
+    connect(m_deleteButton, &QPushButton::clicked, this,
+            [this] { applyState(QStringLiteral("*")); });
+    connect(m_inactivateButton, &QPushButton::clicked, this,
+            [this] { applyState(QStringLiteral("I")); });
+    connect(m_reactivateButton, &QPushButton::clicked, this,
+            [this] { applyState(QStringLiteral("A")); });
+    connect(m_updateButton, &QPushButton::clicked, this, &CrudWidget::updateRecord);
+    connect(m_cancelButton, &QPushButton::clicked, this, &CrudWidget::cancelOperation);
 
     buttonLayout->addWidget(m_addButton);
     buttonLayout->addWidget(m_modifyButton);
@@ -166,6 +180,7 @@ void CrudWidget::refreshGrid()
     // Refreshing always starts from a clean, read-only form (Req 2.5/5.3).
     m_form->clear();
     m_form->setMode(RegisterForm::Mode::ReadOnly);
+    updateCommandState();
 }
 
 void CrudWidget::onGridSelectionChanged()
@@ -175,9 +190,13 @@ void CrudWidget::onGridSelectionChanged()
 
     const QModelIndexList selected = m_grid->selectionModel()->selectedRows();
     if (selected.isEmpty()) {
+        if (m_operation != Operation::Idle)
+            return; // keep the pending Add/Modify form visible
+
         m_selectedRow = -1;
         m_form->clear();
         m_form->setMode(RegisterForm::Mode::ReadOnly);
+        updateCommandState();
         return;
     }
 
@@ -186,8 +205,21 @@ void CrudWidget::onGridSelectionChanged()
         return;
 
     m_selectedRow = row;
-    m_form->setMode(RegisterForm::Mode::ReadOnly);
-    m_form->load(m_records.at(row));
+
+    // Selecting another row replaces the displayed record (Req 2.4). During Add
+    // this abandons the pending new record; during Modify it keeps Modify mode.
+    if (m_operation == Operation::Adding)
+        m_operation = Operation::Idle;
+
+    if (m_operation == Operation::Modifying) {
+        m_form->setMode(RegisterForm::Mode::Modifying);
+        m_form->load(m_records.at(row));
+    } else {
+        m_form->setMode(RegisterForm::Mode::ReadOnly);
+        m_form->load(m_records.at(row));
+    }
+
+    updateCommandState();
 }
 
 QVariantMap CrudWidget::currentRecord() const
@@ -195,6 +227,149 @@ QVariantMap CrudWidget::currentRecord() const
     if (m_selectedRow < 0 || m_selectedRow >= m_records.size())
         return QVariantMap();
     return m_records.at(m_selectedRow);
+}
+
+QVariant CrudWidget::currentPk() const
+{
+    return currentRecord().value(QString::fromLatin1(m_spec.pkColumn));
+}
+
+bool CrudWidget::hasColumn(const QString &columnName) const
+{
+    for (const ColumnSpec &column : m_spec.columns) {
+        if (columnName == QLatin1String(column.dbColumn))
+            return true;
+    }
+    return false;
+}
+
+void CrudWidget::startAdd()
+{
+    if (m_operation != Operation::Idle)
+        return;
+
+    m_operation = Operation::Adding;
+    m_selectedRow = -1;
+    m_grid->clearSelection();
+
+    m_form->clear();
+    m_form->setState(QStringLiteral("A"));
+    m_form->setMode(RegisterForm::Mode::Adding);
+    updateCommandState();
+}
+
+void CrudWidget::startModify()
+{
+    if (m_operation != Operation::Idle)
+        return;
+
+    if (m_selectedRow < 0) {
+        QMessageBox::information(this, tr("Modify Record"),
+                                 tr("Select a record in the grid first."));
+        return;
+    }
+
+    m_operation = Operation::Modifying;
+    m_form->load(currentRecord());
+    m_form->setMode(RegisterForm::Mode::Modifying);
+    updateCommandState();
+}
+
+void CrudWidget::applyState(const QString &newState)
+{
+    if (m_operation != Operation::Idle)
+        return;
+
+    if (m_selectedRow < 0) {
+        QMessageBox::information(this, tr("State Change"),
+                                 tr("Select a record in the grid first."));
+        return;
+    }
+
+    const DbResult result = m_gateway.setState(m_spec, currentPk(), newState);
+    if (!result.success) {
+        QMessageBox::critical(this, tr("Operation failed"), result.error);
+        return;
+    }
+
+    m_operation = Operation::Idle;
+    refreshGrid();
+}
+
+void CrudWidget::updateRecord()
+{
+    if (m_operation == Operation::Idle)
+        return;
+
+    const bool isInsert = m_operation == Operation::Adding;
+    QVariantMap values = m_form->collect();
+
+    if (isInsert) {
+        // created_by_id defaults to the authenticated operator (Task 10).
+        if (hasColumn(QStringLiteral("created_by_id")))
+            values.insert(QStringLiteral("created_by_id"), m_session.userId);
+    } else {
+        if (m_selectedRow < 0)
+            return;
+        if (hasColumn(QStringLiteral("updated_at"))) {
+            values.insert(QStringLiteral("updated_at"),
+                          QDateTime::currentDateTimeUtc().toString(Qt::ISODate));
+        }
+    }
+
+    // Passwords are stored hashed, never as typed (design §13.3).
+    for (const ColumnSpec &column : m_spec.columns) {
+        if (column.type != ColumnType::Password)
+            continue;
+        const QString columnName = QString::fromLatin1(column.dbColumn);
+        if (!values.contains(columnName))
+            continue;
+        const QString plainText = values.value(columnName).toString();
+        if (!plainText.isEmpty())
+            values[columnName] = AuthService::hashPassword(plainText);
+    }
+
+    DbResult result;
+    if (isInsert)
+        result = m_gateway.insert(m_spec, values);
+    else
+        result = m_gateway.update(m_spec, currentPk(), values);
+
+    if (!result.success) {
+        QMessageBox::critical(this, tr("Update failed"), result.error);
+        return;
+    }
+
+    m_operation = Operation::Idle;
+    refreshGrid();
+}
+
+void CrudWidget::cancelOperation()
+{
+    if (m_operation == Operation::Idle)
+        return;
+
+    m_operation = Operation::Idle;
+    m_selectedRow = -1;
+    m_grid->clearSelection();
+    m_form->clear();
+    m_form->setState(QStringLiteral("A"));
+    m_form->setMode(RegisterForm::Mode::ReadOnly);
+    updateCommandState();
+}
+
+void CrudWidget::updateCommandState()
+{
+    const bool idle = m_operation == Operation::Idle;
+    const bool hasSelection = m_selectedRow >= 0 && m_selectedRow < m_records.size();
+
+    m_addButton->setEnabled(idle);
+    m_modifyButton->setEnabled(idle && hasSelection);
+    m_deleteButton->setEnabled(idle && hasSelection);
+    m_inactivateButton->setEnabled(idle && hasSelection);
+    m_reactivateButton->setEnabled(idle && hasSelection);
+    m_updateButton->setEnabled(!idle);
+    m_cancelButton->setEnabled(!idle);
 }
 
 QString CrudWidget::displayValue(const ColumnSpec &column, const QVariant &value) const

@@ -37,9 +37,24 @@ private slots:
     void onGridSelectionChanged();
 
 private:
+    enum class Operation {
+        Idle,
+        Adding,
+        Modifying
+    };
+
     QString displayValue(const ColumnSpec &column, const QVariant &value) const;
     QString stateText(const QString &state) const;
     QVariantMap currentRecord() const;
+    QVariant currentPk() const;
+    bool hasColumn(const QString &columnName) const;
+
+    void startAdd();
+    void startModify();
+    void applyState(const QString &newState);
+    void updateRecord();
+    void cancelOperation();
+    void updateCommandState();
 
     Database &m_database;
     const TableSpec &m_spec;
@@ -54,6 +69,7 @@ private:
     QList<QVariantMap> m_records;
     int m_selectedRow = -1;
     bool m_refreshing = false;
+    Operation m_operation = Operation::Idle;
 
     QPushButton *m_addButton = nullptr;
     QPushButton *m_modifyButton = nullptr;
