@@ -78,6 +78,9 @@ std::optional<AuthSession> AuthService::login(const QString &username, const QSt
     session.username = storedUsername;
     session.isSuperuser = isSuperuser;
 
+    loadRoles(session);
+    loadPermissions(session);
+
     // Record the successful sign-in (design §7.1 step 5). This is best-effort: a
     // failed audit update must not invalidate valid credentials.
     QSqlQuery update(m_db);
@@ -174,6 +177,44 @@ bool AuthService::ensureDefaultUsers(QString *errorMessage) const
         return false;
     }
     return true;
+}
+
+void AuthService::loadRoles(AuthSession &session) const
+{
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral(
+        "SELECT g.name FROM auth_group g "
+        "JOIN user_user_groups ug ON ug.group_id = g.id "
+        "WHERE ug.user_id = ? ORDER BY g.name"));
+    query.addBindValue(session.userId);
+    if (!query.exec())
+        return; // leave roles empty; permissions still gate the UI
+
+    while (query.next())
+        session.roles.append(query.value(0).toString());
+}
+
+void AuthService::loadPermissions(AuthSession &session) const
+{
+    // Effective permissions = group permissions ∪ direct user permissions
+    // (design §9). UNION removes duplicates across both sources.
+    QSqlQuery query(m_db);
+    query.prepare(QStringLiteral(
+        "SELECT p.codename FROM auth_permission p "
+        "JOIN auth_group_permissions gp ON gp.permission_id = p.id "
+        "JOIN user_user_groups ug ON ug.group_id = gp.group_id "
+        "WHERE ug.user_id = ? "
+        "UNION "
+        "SELECT p.codename FROM auth_permission p "
+        "JOIN user_user_user_permissions up ON up.permission_id = p.id "
+        "WHERE up.user_id = ?"));
+    query.addBindValue(session.userId);
+    query.addBindValue(session.userId);
+    if (!query.exec())
+        return; // an empty set simply grants no CRUD access
+
+    while (query.next())
+        session.permissions.insert(query.value(0).toString());
 }
 
 QString AuthService::hashPassword(const QString &password)

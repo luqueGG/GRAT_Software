@@ -33,6 +33,9 @@ public:
     static QString generateSalt();
 
 private:
+    void loadRoles(AuthSession &session) const;
+    void loadPermissions(AuthSession &session) const;
+
     // QSqlDatabase handles are shallow; mutable lets const helpers run transactions.
     mutable QSqlDatabase m_db;
 };
