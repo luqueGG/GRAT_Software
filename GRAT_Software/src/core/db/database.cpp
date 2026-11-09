@@ -116,15 +116,25 @@ bool Database::runSchema(const QString &schemaResource)
     file.close();
 
     const QStringList statements = splitStatements(sql);
+
+    // Wrap schema creation in a single transaction so all statements commit in
+    // one fsync (fast) and the schema is created atomically; rollback on any error.
+    const bool inTx = m_db.transaction();
+    QSqlQuery q(m_db);
     for (const QString &raw : statements) {
         const QString stmt = cleanStatement(raw);
         if (stmt.isEmpty())
             continue;
-        QSqlQuery q(m_db);
         if (!q.exec(stmt)) {
             m_lastError = tr("Schema statement failed: %1").arg(q.lastError().text());
+            if (inTx)
+                m_db.rollback();
             return false;
         }
+    }
+    if (inTx && !m_db.commit()) {
+        m_lastError = tr("Could not commit the schema initialization.");
+        return false;
     }
     return true;
 }
