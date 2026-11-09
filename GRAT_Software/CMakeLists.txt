@@ -34,6 +34,7 @@ add_executable(grat_software
     src/ui/login_dialog.ui
     src/ui/main_window.cpp
     src/ui/main_window.ui
+    src/ui/register_form.cpp
     resources/grat_schema.qrc
 )
 
