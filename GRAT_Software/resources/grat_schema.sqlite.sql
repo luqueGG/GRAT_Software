@@ -328,3 +328,109 @@ CREATE TABLE transfer_transfertravelcompany (
 CREATE INDEX idx_ttc_transfer ON transfer_transfertravelcompany (id_transfer_id);
 CREATE INDEX idx_ttc_travel_company ON transfer_transfertravelcompany (id_travel_company_id);
 CREATE INDEX idx_ttc_transport_type ON transfer_transfertravelcompany (id_type_transport_id);
+
+-- =============================================================================
+-- 7. RBAC SEED DATA
+-- =============================================================================
+
+-- 7.1 Insert Roles
+INSERT INTO auth_group (name) VALUES
+    ('Administrator'),
+    ('Supervisor'),
+    ('Operator');
+
+-- 7.2 Insert System Permissions (43 distinct matrix permissions)
+INSERT INTO auth_permission (name, app_label, model, codename) VALUES
+    ('Can add constituent', 'catalog', 'constituent', 'add_constituent'),
+    ('Can change constituent', 'catalog', 'constituent', 'change_constituent'),
+    ('Can view constituent', 'catalog', 'constituent', 'view_constituent'),
+    ('Can add containertype', 'catalog', 'containertype', 'add_containertype'),
+    ('Can change containertype', 'catalog', 'containertype', 'change_containertype'),
+    ('Can view containertype', 'catalog', 'containertype', 'view_containertype'),
+    ('Can add toxicitylevel', 'catalog', 'toxicitylevel', 'add_toxicitylevel'),
+    ('Can change toxicitylevel', 'catalog', 'toxicitylevel', 'change_toxicitylevel'),
+    ('Can view toxicitylevel', 'catalog', 'toxicitylevel', 'view_toxicitylevel'),
+    ('Can add transporttype', 'catalog', 'transporttype', 'add_transporttype'),
+    ('Can change transporttype', 'catalog', 'transporttype', 'change_transporttype'),
+    ('Can view transporttype', 'catalog', 'transporttype', 'view_transporttype'),
+    ('Can add country', 'location', 'country', 'add_country'),
+    ('Can change country', 'location', 'country', 'change_country'),
+    ('Can view country', 'location', 'country', 'view_country'),
+    ('Can add subdivision', 'location', 'subdivision', 'add_subdivision'),
+    ('Can change subdivision', 'location', 'subdivision', 'change_subdivision'),
+    ('Can view subdivision', 'location', 'subdivision', 'view_subdivision'),
+    ('Can add destination', 'transfer', 'destination', 'add_destination'),
+    ('Can change destination', 'transfer', 'destination', 'change_destination'),
+    ('Can view destination', 'transfer', 'destination', 'view_destination'),
+    ('Can add transfer', 'transfer', 'transfer', 'add_transfer'),
+    ('Can change transfer', 'transfer', 'transfer', 'change_transfer'),
+    ('Can view transfer', 'transfer', 'transfer', 'view_transfer'),
+    ('Can add transfertravelcompany', 'transfer', 'transfertravelcompany', 'add_transfertravelcompany'),
+    ('Can change transfertravelcompany', 'transfer', 'transfertravelcompany', 'change_transfertravelcompany'),
+    ('Can view transfertravelcompany', 'transfer', 'transfertravelcompany', 'view_transfertravelcompany'),
+    ('Can add travelcompany', 'transfer', 'travelcompany', 'add_travelcompany'),
+    ('Can change travelcompany', 'transfer', 'travelcompany', 'change_travelcompany'),
+    ('Can view travelcompany', 'transfer', 'travelcompany', 'view_travelcompany'),
+    ('Can add user', 'user', 'user', 'add_user'),
+    ('Can assign role user', 'user', 'user', 'assign_role_user'),
+    ('Can change user', 'user', 'user', 'change_user'),
+    ('Can view user', 'user', 'user', 'view_user'),
+    ('Can add generatorcompany', 'waste', 'generatorcompany', 'add_generatorcompany'),
+    ('Can change generatorcompany', 'waste', 'generatorcompany', 'change_generatorcompany'),
+    ('Can view generatorcompany', 'waste', 'generatorcompany', 'view_generatorcompany'),
+    ('Can add waste', 'waste', 'waste', 'add_waste'),
+    ('Can change waste', 'waste', 'waste', 'change_waste'),
+    ('Can view waste', 'waste', 'waste', 'view_waste'),
+    ('Can add wasteconstituent', 'waste', 'wasteconstituent', 'add_wasteconstituent'),
+    ('Can change wasteconstituent', 'waste', 'wasteconstituent', 'change_wasteconstituent'),
+    ('Can view wasteconstituent', 'waste', 'wasteconstituent', 'view_wasteconstituent');
+
+-- 7.3 Map Role Permissions for Administrator (All 43 permissions)
+INSERT INTO auth_group_permissions (group_id, permission_id)
+SELECT g.id, p.id
+FROM auth_group g CROSS JOIN auth_permission p
+WHERE g.name = 'Administrator'
+  AND p.codename IN (
+      'add_constituent', 'add_containertype', 'add_country', 'add_destination',
+      'add_generatorcompany', 'add_subdivision', 'add_toxicitylevel', 'add_transfer',
+      'add_transfertravelcompany', 'add_transporttype', 'add_travelcompany', 'add_user',
+      'add_waste', 'add_wasteconstituent', 'assign_role_user', 'change_constituent',
+      'change_containertype', 'change_country', 'change_destination', 'change_generatorcompany',
+      'change_subdivision', 'change_toxicitylevel', 'change_transfer', 'change_transfertravelcompany',
+      'change_transporttype', 'change_travelcompany', 'change_user', 'change_waste',
+      'change_wasteconstituent', 'view_constituent', 'view_containertype', 'view_country',
+      'view_destination', 'view_generatorcompany', 'view_subdivision', 'view_toxicitylevel',
+      'view_transfer', 'view_transfertravelcompany', 'view_transporttype', 'view_travelcompany',
+      'view_user', 'view_waste', 'view_wasteconstituent'
+  );
+
+-- 7.4 Map Role Permissions for Supervisor (36 permissions)
+INSERT INTO auth_group_permissions (group_id, permission_id)
+SELECT g.id, p.id
+FROM auth_group g CROSS JOIN auth_permission p
+WHERE g.name = 'Supervisor'
+  AND p.codename IN (
+      'add_constituent', 'add_containertype', 'add_destination', 'add_generatorcompany',
+      'add_toxicitylevel', 'add_transfer', 'add_transfertravelcompany', 'add_transporttype',
+      'add_travelcompany', 'add_waste', 'add_wasteconstituent', 'change_constituent',
+      'change_containertype', 'change_destination', 'change_generatorcompany',
+      'change_toxicitylevel', 'change_transfer', 'change_transfertravelcompany',
+      'change_transporttype', 'change_travelcompany', 'change_waste', 'change_wasteconstituent',
+      'view_constituent', 'view_containertype', 'view_country', 'view_destination',
+      'view_generatorcompany', 'view_subdivision', 'view_toxicitylevel', 'view_transfer',
+      'view_transfertravelcompany', 'view_transporttype', 'view_travelcompany', 'view_user',
+      'view_waste', 'view_wasteconstituent'
+  );
+
+-- 7.5 Map Role Permissions for Operator (19 permissions)
+INSERT INTO auth_group_permissions (group_id, permission_id)
+SELECT g.id, p.id
+FROM auth_group g CROSS JOIN auth_permission p
+WHERE g.name = 'Operator'
+  AND p.codename IN (
+      'add_transfer', 'add_transfertravelcompany', 'add_waste', 'change_transfer',
+      'change_transfertravelcompany', 'change_waste', 'view_constituent', 'view_containertype',
+      'view_country', 'view_destination', 'view_generatorcompany', 'view_subdivision',
+      'view_toxicitylevel', 'view_transfer', 'view_transfertravelcompany', 'view_transporttype',
+      'view_travelcompany', 'view_waste', 'view_wasteconstituent'
+  );
