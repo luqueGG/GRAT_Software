@@ -26,6 +26,7 @@ add_executable(grat_software
     src/main.cpp
     src/core/db/database.cpp
     src/core/crud/table_specs.cpp
+    src/core/crud/table_gateway.cpp
     resources/grat_schema.qrc
 )
 
