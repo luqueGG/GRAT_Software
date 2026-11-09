@@ -13,6 +13,7 @@
 
 class Database;
 class QLabel;
+struct TableSpec;
 
 namespace Ui {
 class MainWindow;
@@ -31,7 +32,7 @@ private:
     void buildMenus();
     void buildNavigation();
     void updateStatusBar();
-
+    bool canView(const TableSpec &spec) const;
     QString moduleTitle(const QString &module) const;
     QString tableTitle(const QString &table) const;
 

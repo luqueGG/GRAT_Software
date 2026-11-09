@@ -13,6 +13,7 @@
 #include <QTreeWidget>
 
 #include "core/crud/table_spec.h"
+#include "core/auth/permission_checker.h"
 #include "core/db/database.h"
 #include "ui_main_window.h"
 
@@ -89,18 +90,40 @@ void MainWindow::buildNavigation()
         moduleFont.setBold(true);
         moduleItem->setFont(0, moduleFont);
 
+        int visibleTables = 0;
         for (const TableSpec &spec : allTableSpecs()) {
             if (QString::fromLatin1(spec.module) != QLatin1String(module.key))
+                continue;
+            if (!canView(spec))
                 continue;
 
             auto *item = new QTreeWidgetItem(moduleItem);
             const QString table = QString::fromLatin1(spec.table);
             item->setText(0, tableTitle(table));
             item->setData(0, Qt::UserRole, table);
+            ++visibleTables;
+        }
+
+        // A module with no viewable table is hidden entirely (Task 9).
+        if (visibleTables == 0) {
+            delete moduleItem;
+            continue;
         }
 
         moduleItem->setExpanded(true);
     }
+}
+
+bool MainWindow::canView(const TableSpec &spec) const
+{
+    // The Admin → Roles screen is outside the 43-permission matrix and reserved
+    // for Administrators/superusers (design §5.3).
+    if (QString::fromLatin1(spec.module) == QLatin1String("admin"))
+        return m_session.isSuperuser;
+
+    return PermissionChecker::can(m_session, PermissionAction::View,
+                                  QString::fromLatin1(spec.appLabel),
+                                  QString::fromLatin1(spec.model));
 }
 
 void MainWindow::updateStatusBar()
