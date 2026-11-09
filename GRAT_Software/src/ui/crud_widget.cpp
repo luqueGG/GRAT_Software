@@ -298,8 +298,13 @@ void CrudWidget::applyState(const QString &newState)
 
 void CrudWidget::updateRecord()
 {
-    if (m_operation == Operation::Idle)
+    if (m_operation == Operation::Idle) {
+        // Req 5.2: Update without a pending operation explains why nothing happens.
+        QMessageBox::information(this, tr("Update Record"),
+                                 tr("There is no pending operation to update. "
+                                    "Choose Add or Modify first."));
         return;
+    }
 
     const bool isInsert = m_operation == Operation::Adding;
     QVariantMap values = m_form->collect();
@@ -368,7 +373,8 @@ void CrudWidget::updateCommandState()
     m_deleteButton->setEnabled(idle && hasSelection);
     m_inactivateButton->setEnabled(idle && hasSelection);
     m_reactivateButton->setEnabled(idle && hasSelection);
-    m_updateButton->setEnabled(!idle);
+    // Update stays clickable in Idle so the operator gets the Req 5.2 message.
+    m_updateButton->setEnabled(true);
     m_cancelButton->setEnabled(!idle);
 }
 
