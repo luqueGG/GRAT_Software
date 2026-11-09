@@ -30,6 +30,8 @@ add_executable(grat_software
     src/core/crud/validator.cpp
     src/core/auth/auth_service.cpp
     src/core/auth/permission_checker.cpp
+    src/ui/login_dialog.cpp
+    src/ui/login_dialog.ui
     resources/grat_schema.qrc
 )
 
