@@ -22,6 +22,7 @@
 #include <QVBoxLayout>
 
 #include "core/auth/auth_service.h"
+#include "core/auth/permission_checker.h"
 #include "core/crud/validator.h"
 #include "core/db/database.h"
 #include "ui/register_form.h"
@@ -385,13 +386,21 @@ void CrudWidget::updateCommandState()
     const bool idle = m_operation == Operation::Idle;
     const bool hasSelection = m_selectedRow >= 0 && m_selectedRow < m_records.size();
 
-    m_addButton->setEnabled(idle);
-    m_modifyButton->setEnabled(idle && hasSelection);
-    m_deleteButton->setEnabled(idle && hasSelection);
-    m_inactivateButton->setEnabled(idle && hasSelection);
-    m_reactivateButton->setEnabled(idle && hasSelection);
-    // Update stays clickable in Idle so the operator gets the Req 5.2 message.
-    m_updateButton->setEnabled(true);
+    const QString appLabel = QString::fromLatin1(m_spec.appLabel);
+    const QString model = QString::fromLatin1(m_spec.model);
+    const bool canAdd = PermissionChecker::can(m_session, PermissionAction::Add,
+                                               appLabel, model);
+    const bool canChange = PermissionChecker::can(m_session, PermissionAction::Change,
+                                                  appLabel, model);
+
+    m_addButton->setEnabled(idle && canAdd);
+    m_modifyButton->setEnabled(idle && hasSelection && canChange);
+    m_deleteButton->setEnabled(idle && hasSelection && canChange);
+    m_inactivateButton->setEnabled(idle && hasSelection && canChange);
+    m_reactivateButton->setEnabled(idle && hasSelection && canChange);
+    // Update stays clickable in Idle so the operator gets the Req 5.2 message,
+    // but only when they may change the table at all.
+    m_updateButton->setEnabled(canChange);
     m_cancelButton->setEnabled(!idle);
 }
 
