@@ -35,6 +35,7 @@ add_executable(grat_software
     src/ui/main_window.cpp
     src/ui/main_window.ui
     src/ui/register_form.cpp
+    src/ui/crud_widget.cpp
     resources/grat_schema.qrc
 )
 

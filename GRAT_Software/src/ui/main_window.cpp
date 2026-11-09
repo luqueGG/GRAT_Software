@@ -12,11 +12,11 @@
 #include <QStatusBar>
 #include <QTimer>
 #include <QTreeWidget>
-#include <QVBoxLayout>
 
 #include "core/crud/table_spec.h"
 #include "core/auth/permission_checker.h"
 #include "core/db/database.h"
+#include "ui/crud_widget.h"
 #include "ui_main_window.h"
 
 namespace {
@@ -200,32 +200,9 @@ void MainWindow::showPage(QTreeWidgetItem *current, QTreeWidgetItem *previous)
 
 QWidget *MainWindow::createPage(const TableSpec &spec)
 {
-    // Task 11 replaces this placeholder with a CrudWidget built from the same
-    // TableSpec (grid + register form + command buttons).
-    auto *page = new QWidget(m_ui->stackedWidget);
-    auto *layout = new QVBoxLayout(page);
-    layout->setContentsMargins(18, 18, 18, 18);
-
-    auto *heading = new QLabel(tableTitle(QString::fromLatin1(spec.table)), page);
-    QFont headingFont = heading->font();
-    headingFont.setPointSize(18);
-    headingFont.setBold(true);
-    heading->setFont(headingFont);
-
-    auto *moduleLabel = new QLabel(
-        tr("Module: %1").arg(moduleTitle(QString::fromLatin1(spec.module))), page);
-    moduleLabel->setStyleSheet(QStringLiteral("color: #666666;"));
-
-    auto *notice = new QLabel(
-        tr("The CRUD grid and register form for this table will appear here."), page);
-    notice->setWordWrap(true);
-
-    layout->addWidget(heading);
-    layout->addWidget(moduleLabel);
-    layout->addSpacing(12);
-    layout->addWidget(notice);
-    layout->addStretch();
-    return page;
+    return new CrudWidget(m_database, spec, m_session,
+                          tableTitle(QString::fromLatin1(spec.table)),
+                          m_ui->stackedWidget);
 }
 
 void MainWindow::navigateToTable(const QString &table)
