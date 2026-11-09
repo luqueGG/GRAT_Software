@@ -17,10 +17,12 @@
 #include <QSplitter>
 #include <QStandardItem>
 #include <QStandardItemModel>
+#include <QStringList>
 #include <QTableView>
 #include <QVBoxLayout>
 
 #include "core/auth/auth_service.h"
+#include "core/crud/validator.h"
 #include "core/db/database.h"
 #include "ui/register_form.h"
 
@@ -320,6 +322,21 @@ void CrudWidget::updateRecord()
             values.insert(QStringLiteral("updated_at"),
                           QDateTime::currentDateTimeUtc().toString(Qt::ISODate));
         }
+    }
+
+    // Req 7: validate before any write, collecting every invalid field so the
+    // operator can fix them in one pass (Req 7.4–7.5).
+    const Validator validator(m_gateway);
+    const QList<ValidationError> errors = validator.validate(m_spec, values, isInsert);
+    if (!errors.isEmpty()) {
+        QStringList details;
+        details.reserve(errors.size());
+        for (const ValidationError &error : errors)
+            details << QStringLiteral("• %1").arg(error.reason);
+        QMessageBox::warning(this, tr("Validation failed"),
+                             tr("Please correct the following fields:\n\n%1")
+                                 .arg(details.join(QLatin1Char('\n'))));
+        return;
     }
 
     // Passwords are stored hashed, never as typed (design §13.3).
