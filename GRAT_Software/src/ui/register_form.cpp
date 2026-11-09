@@ -1,5 +1,6 @@
 #include "register_form.h"
 
+#include <QAbstractSpinBox>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDate>
@@ -11,6 +12,8 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QVariant>
+
+#include "app/session.h"
 
 RegisterForm::RegisterForm(const TableSpec &spec, TableGateway &gateway,
                            const AuthSession &session, QWidget *parent)
@@ -46,7 +49,21 @@ RegisterForm::RegisterForm(const TableSpec &spec, TableGateway &gateway,
         m_fields.append(field);
     }
 
+    // created_by_id is operator-invisible metadata: show the authenticated user
+    // and never let it be edited (Task 10).
+    for (const Field &field : m_fields) {
+        if (!field.combo)
+            continue;
+        if (QString::fromLatin1(field.column->dbColumn) != QLatin1String("created_by_id"))
+            continue;
+
+        field.combo->clear();
+        field.combo->addItem(m_session.username, m_session.userId);
+        field.combo->setCurrentIndex(0);
+    }
+
     setState(QStringLiteral("A"));
+    setMode(Mode::ReadOnly);
 }
 
 QWidget *RegisterForm::createField(const ColumnSpec &column)
@@ -122,6 +139,52 @@ QComboBox *RegisterForm::createCombo(const ColumnSpec &column)
     combo->setObjectName(QStringLiteral("field_") + QString::fromLatin1(column.dbColumn));
     combo->addItem(tr("— Select —"), QVariant());
     return combo;
+}
+
+void RegisterForm::setMode(Mode mode)
+{
+    m_mode = mode;
+    applyMode();
+}
+
+RegisterForm::Mode RegisterForm::mode() const
+{
+    return m_mode;
+}
+
+void RegisterForm::applyMode()
+{
+    const QString pkColumn = QString::fromLatin1(m_spec.pkColumn);
+
+    for (const Field &field : m_fields) {
+        if (!field.column || field.stateLabel)
+            continue;
+
+        const QString columnName = QString::fromLatin1(field.column->dbColumn);
+        bool editable = field.column->editable && !field.column->autoManaged
+            && field.column->type != ColumnType::State;
+
+        if (columnName == pkColumn) {
+            // Identity PKs are generated and always locked; natural PKs are
+            // editable only while adding a new record (Req 3.3).
+            editable = !m_spec.identityPk && m_mode == Mode::Adding;
+        }
+
+        if (m_mode == Mode::ReadOnly)
+            editable = false;
+
+        if (auto *edit = qobject_cast<QLineEdit *>(field.widget)) {
+            edit->setReadOnly(!editable);
+        } else if (auto *spin = qobject_cast<QAbstractSpinBox *>(field.widget)) {
+            spin->setReadOnly(!editable);
+            spin->setButtonSymbols(editable ? QAbstractSpinBox::UpDownArrows
+                                            : QAbstractSpinBox::NoButtons);
+        } else if (auto *check = qobject_cast<QCheckBox *>(field.widget)) {
+            check->setEnabled(editable);
+        } else if (field.combo) {
+            field.combo->setEnabled(editable);
+        }
+    }
 }
 
 QString RegisterForm::state() const

@@ -23,8 +23,17 @@ class RegisterForm : public QWidget
     Q_OBJECT
 
 public:
+    enum class Mode {
+        ReadOnly,  // browsing a selected record
+        Adding,    // new record; natural PK editable
+        Modifying  // existing record; PK locked
+    };
+
     explicit RegisterForm(const TableSpec &spec, TableGateway &gateway,
                           const AuthSession &session, QWidget *parent = nullptr);
+
+    void setMode(Mode mode);
+    Mode mode() const;
 
     QString state() const;
     void setState(const QString &state);
@@ -40,6 +49,7 @@ private:
 
     QWidget *createField(const ColumnSpec &column);
     QComboBox *createCombo(const ColumnSpec &column);
+    void applyMode();
 
     const TableSpec &m_spec;
     TableGateway &m_gateway;
@@ -47,4 +57,5 @@ private:
     QFormLayout *m_layout = nullptr;
     QList<Field> m_fields;
     QString m_state = QStringLiteral("A");
+    Mode m_mode = Mode::ReadOnly;
 };
