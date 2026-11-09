@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <QHash>
 #include <QMainWindow>
 #include <memory>
 
@@ -13,6 +14,7 @@
 
 class Database;
 class QLabel;
+class QTreeWidgetItem;
 struct TableSpec;
 
 namespace Ui {
@@ -28,17 +30,26 @@ public:
                         QWidget *parent = nullptr);
     ~MainWindow() override;
 
+private slots:
+    void showPage(QTreeWidgetItem *current, QTreeWidgetItem *previous);
+
 private:
     void buildMenus();
     void buildNavigation();
     void updateStatusBar();
     bool canView(const TableSpec &spec) const;
+    QWidget *createPage(const TableSpec &spec);
+    void navigateToTable(const QString &table);
+
     QString moduleTitle(const QString &module) const;
     QString tableTitle(const QString &table) const;
 
     std::unique_ptr<Ui::MainWindow> m_ui;
     Database &m_database;
     AuthSession m_session;
+
+    QHash<QString, QWidget *> m_pages;
+    QHash<QString, QTreeWidgetItem *> m_navigationItems;
 
     QLabel *m_dbStatusLabel = nullptr;
     QLabel *m_userLabel = nullptr;
