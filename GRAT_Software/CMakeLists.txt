@@ -25,6 +25,7 @@ find_package(Qt6 6 COMPONENTS Widgets Sql REQUIRED)
 add_executable(grat_software
     src/main.cpp
     src/core/db/database.cpp
+    src/core/crud/table_specs.cpp
     resources/grat_schema.qrc
 )
 
