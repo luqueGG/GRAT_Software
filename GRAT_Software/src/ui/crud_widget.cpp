@@ -8,6 +8,7 @@
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QItemSelectionModel>
 #include <QLabel>
 #include <QPushButton>
 #include <QScrollArea>
@@ -54,6 +55,9 @@ CrudWidget::CrudWidget(Database &database, const TableSpec &spec,
     m_grid->setAlternatingRowColors(true);
     m_grid->verticalHeader()->setVisible(false);
     m_grid->horizontalHeader()->setStretchLastSection(true);
+
+    connect(m_grid->selectionModel(), &QItemSelectionModel::selectionChanged,
+            this, &CrudWidget::onGridSelectionChanged);
 
     auto *lowerPanel = new QWidget(splitter);
     auto *lowerLayout = new QVBoxLayout(lowerPanel);
@@ -102,6 +106,8 @@ CrudWidget::CrudWidget(Database &database, const TableSpec &spec,
 
 void CrudWidget::refreshGrid()
 {
+    m_refreshing = true;
+
     m_gridColumns.clear();
     QStringList headers;
     for (int i = 0; i < static_cast<int>(m_spec.columns.size()); ++i) {
@@ -152,6 +158,43 @@ void CrudWidget::refreshGrid()
 
         m_gridModel->appendRow(items);
     }
+
+    m_selectedRow = -1;
+    m_grid->clearSelection();
+    m_refreshing = false;
+
+    // Refreshing always starts from a clean, read-only form (Req 2.5/5.3).
+    m_form->clear();
+    m_form->setMode(RegisterForm::Mode::ReadOnly);
+}
+
+void CrudWidget::onGridSelectionChanged()
+{
+    if (m_refreshing)
+        return;
+
+    const QModelIndexList selected = m_grid->selectionModel()->selectedRows();
+    if (selected.isEmpty()) {
+        m_selectedRow = -1;
+        m_form->clear();
+        m_form->setMode(RegisterForm::Mode::ReadOnly);
+        return;
+    }
+
+    const int row = selected.first().row();
+    if (row < 0 || row >= m_records.size())
+        return;
+
+    m_selectedRow = row;
+    m_form->setMode(RegisterForm::Mode::ReadOnly);
+    m_form->load(m_records.at(row));
+}
+
+QVariantMap CrudWidget::currentRecord() const
+{
+    if (m_selectedRow < 0 || m_selectedRow >= m_records.size())
+        return QVariantMap();
+    return m_records.at(m_selectedRow);
 }
 
 QString CrudWidget::displayValue(const ColumnSpec &column, const QVariant &value) const

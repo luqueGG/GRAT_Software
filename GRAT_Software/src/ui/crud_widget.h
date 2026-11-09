@@ -33,9 +33,13 @@ public:
 
     void refreshGrid();
 
+private slots:
+    void onGridSelectionChanged();
+
 private:
     QString displayValue(const ColumnSpec &column, const QVariant &value) const;
     QString stateText(const QString &state) const;
+    QVariantMap currentRecord() const;
 
     Database &m_database;
     const TableSpec &m_spec;
@@ -48,6 +52,8 @@ private:
     QStandardItemModel *m_gridModel = nullptr;
     QList<int> m_gridColumns;
     QList<QVariantMap> m_records;
+    int m_selectedRow = -1;
+    bool m_refreshing = false;
 
     QPushButton *m_addButton = nullptr;
     QPushButton *m_modifyButton = nullptr;
