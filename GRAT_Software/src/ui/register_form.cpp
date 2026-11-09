@@ -314,6 +314,79 @@ void RegisterForm::load(const QVariantMap &record)
     }
 }
 
+void RegisterForm::clear()
+{
+    setState(QStringLiteral("A"));
+
+    for (Field &field : m_fields) {
+        if (field.stateLabel)
+            continue;
+
+        const QString columnName = QString::fromLatin1(field.column->dbColumn);
+        if (field.combo) {
+            if (columnName == QLatin1String("created_by_id"))
+                selectComboValue(field, m_session.userId);
+            else
+                field.combo->setCurrentIndex(0);
+            continue;
+        }
+
+        if (auto *edit = qobject_cast<QLineEdit *>(field.widget)) {
+            edit->clear();
+        } else if (auto *spin = qobject_cast<QDoubleSpinBox *>(field.widget)) {
+            spin->setValue(0.0);
+        } else if (auto *dateEdit = qobject_cast<QDateEdit *>(field.widget)) {
+            dateEdit->setDate(QDate::currentDate());
+        } else if (auto *dateTimeEdit = qobject_cast<QDateTimeEdit *>(field.widget)) {
+            dateTimeEdit->setDateTime(field.column->autoManaged
+                                          ? dateTimeEdit->minimumDateTime()
+                                          : QDateTime::currentDateTime());
+        } else if (auto *check = qobject_cast<QCheckBox *>(field.widget)) {
+            check->setChecked(false);
+        }
+    }
+}
+
+QVariantMap RegisterForm::collect() const
+{
+    QVariantMap values;
+    const QString pkColumn = QString::fromLatin1(m_spec.pkColumn);
+
+    for (const Field &field : m_fields) {
+        const ColumnSpec &column = *field.column;
+        const QString columnName = QString::fromLatin1(column.dbColumn);
+
+        // State changes only through the lifecycle commands; auto fields are
+        // database-managed; identity PKs are generated.
+        if (column.type == ColumnType::State || column.autoManaged)
+            continue;
+        if (m_spec.identityPk && columnName == pkColumn)
+            continue;
+
+        if (field.combo) {
+            values.insert(columnName, field.combo->currentData());
+            continue;
+        }
+
+        if (auto *edit = qobject_cast<QLineEdit *>(field.widget)) {
+            // Empty password on Modify means "keep the current password".
+            if (column.type == ColumnType::Password && edit->text().isEmpty())
+                continue;
+            values.insert(columnName, edit->text());
+        } else if (auto *spin = qobject_cast<QDoubleSpinBox *>(field.widget)) {
+            values.insert(columnName, spin->value());
+        } else if (auto *dateEdit = qobject_cast<QDateEdit *>(field.widget)) {
+            values.insert(columnName, dateEdit->date().toString(Qt::ISODate));
+        } else if (auto *dateTimeEdit = qobject_cast<QDateTimeEdit *>(field.widget)) {
+            values.insert(columnName, dateTimeEdit->dateTime().toString(Qt::ISODate));
+        } else if (auto *check = qobject_cast<QCheckBox *>(field.widget)) {
+            values.insert(columnName, check->isChecked() ? 1 : 0);
+        }
+    }
+
+    return values;
+}
+
 QString RegisterForm::state() const
 {
     return m_state;

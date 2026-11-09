@@ -37,6 +37,8 @@ public:
     Mode mode() const;
 
     void load(const QVariantMap &record);
+    void clear();
+    QVariantMap collect() const;
 
     QString state() const;
     void setState(const QString &state);
