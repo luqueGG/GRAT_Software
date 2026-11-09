@@ -8,9 +8,11 @@
 // screens.
 
 #include <QApplication>
+#include <QDebug>
 #include <QMainWindow>
 #include <QMessageBox>
 
+#include "core/auth/auth_service.h"
 #include "core/db/database.h"
 
 int main(int argc, char *argv[])
@@ -29,6 +31,13 @@ int main(int argc, char *argv[])
                 .arg(database.lastError()));
         return 1;
     }
+
+    // A fresh database has RBAC roles but no operators yet; create the default
+    // demonstration accounts once so the sign-in dialog is usable.
+    AuthService authService(database.connection());
+    QString seedError;
+    if (!authService.ensureDefaultUsers(&seedError))
+        qWarning().noquote() << seedError;
 
     QMainWindow window;
     window.setWindowTitle("GRAT_Software");
