@@ -54,5 +54,7 @@ public:
 private:
     static QString genericError();
 
-    QSqlDatabase m_db;
+    // The handle is shared/shallow; marking mutable lets const methods drive
+    // transactions without changing the gateway's own state.
+    mutable QSqlDatabase m_db;
 };
