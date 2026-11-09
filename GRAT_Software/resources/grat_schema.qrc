@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>grat_schema.sqlite.sql</file>
+    </qresource>
+</RCC>
