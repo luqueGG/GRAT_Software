@@ -10,6 +10,7 @@
 #include <QMessageBox>
 #include <QStackedWidget>
 #include <QStatusBar>
+#include <QTimer>
 #include <QTreeWidget>
 #include <QVBoxLayout>
 
@@ -48,6 +49,9 @@ MainWindow::MainWindow(Database &database, const AuthSession &session, QWidget *
     m_dbStatusLabel = new QLabel(this);
     m_userLabel = new QLabel(this);
     m_rolesLabel = new QLabel(this);
+    m_dbStatusLabel->setObjectName(QStringLiteral("dbStatusLabel"));
+    m_userLabel->setObjectName(QStringLiteral("userLabel"));
+    m_rolesLabel->setObjectName(QStringLiteral("rolesLabel"));
     statusBar()->addWidget(m_dbStatusLabel);
     statusBar()->addPermanentWidget(m_userLabel);
     statusBar()->addPermanentWidget(m_rolesLabel);
@@ -57,6 +61,17 @@ MainWindow::MainWindow(Database &database, const AuthSession &session, QWidget *
             this, &MainWindow::showPage);
     buildMenus();
     updateStatusBar();
+
+    // Observe database health: the Database signal covers lifecycle changes and
+    // the timer catches loss/restoration of the live connection (Req 8.3–8.4).
+    connect(&m_database, &Database::connectionChanged,
+            this, &MainWindow::refreshConnectionState);
+    m_connectionTimer = new QTimer(this);
+    m_connectionTimer->setInterval(3000);
+    connect(m_connectionTimer, &QTimer::timeout,
+            this, &MainWindow::refreshConnectionState);
+    m_connectionTimer->start();
+    refreshConnectionState();
 
     setWindowTitle(QStringLiteral("GRAT_Software — %1").arg(m_session.username));
 
@@ -229,7 +244,7 @@ void MainWindow::navigateToTable(const QString &table)
 
 void MainWindow::updateStatusBar()
 {
-    if (m_database.isConnected()) {
+    if (m_connected) {
         m_dbStatusLabel->setText(tr("● DB connected"));
         m_dbStatusLabel->setStyleSheet(QStringLiteral("color: #1b7f3a;"));
     } else {
@@ -242,6 +257,29 @@ void MainWindow::updateStatusBar()
         ? tr("none")
         : m_session.roles.join(QStringLiteral(", "));
     m_rolesLabel->setText(tr("Role(s): %1").arg(roles));
+}
+
+void MainWindow::refreshConnectionState()
+{
+    const bool wasConnected = m_connected;
+    m_connected = m_database.isAlive();
+
+    updateStatusBar();
+    setMaintenanceEnabled(m_connected);
+
+    if (wasConnected && !m_connected) {
+        statusBar()->showMessage(
+            tr("Database connection lost. Maintenance actions are disabled."));
+    } else if (!wasConnected && m_connected) {
+        statusBar()->showMessage(tr("Database connection restored."), 5000);
+    }
+}
+
+void MainWindow::setMaintenanceEnabled(bool enabled)
+{
+    // Every table page (and, from Task 11, its command buttons) is disabled while
+    // the database is unavailable, and re-enabled when it returns.
+    m_ui->stackedWidget->setEnabled(enabled);
 }
 
 QString MainWindow::moduleTitle(const QString &module) const

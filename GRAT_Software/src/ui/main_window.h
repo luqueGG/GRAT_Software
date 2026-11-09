@@ -14,6 +14,7 @@
 
 class Database;
 class QLabel;
+class QTimer;
 class QTreeWidgetItem;
 struct TableSpec;
 
@@ -32,6 +33,7 @@ public:
 
 private slots:
     void showPage(QTreeWidgetItem *current, QTreeWidgetItem *previous);
+    void refreshConnectionState();
 
 private:
     void buildMenus();
@@ -40,6 +42,7 @@ private:
     bool canView(const TableSpec &spec) const;
     QWidget *createPage(const TableSpec &spec);
     void navigateToTable(const QString &table);
+    void setMaintenanceEnabled(bool enabled);
 
     QString moduleTitle(const QString &module) const;
     QString tableTitle(const QString &table) const;
@@ -54,4 +57,6 @@ private:
     QLabel *m_dbStatusLabel = nullptr;
     QLabel *m_userLabel = nullptr;
     QLabel *m_rolesLabel = nullptr;
+    QTimer *m_connectionTimer = nullptr;
+    bool m_connected = true;
 };

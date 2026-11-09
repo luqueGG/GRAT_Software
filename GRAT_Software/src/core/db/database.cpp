@@ -79,6 +79,15 @@ bool Database::isConnected() const
     return m_db.isOpen();
 }
 
+bool Database::isAlive() const
+{
+    if (!m_db.isOpen())
+        return false;
+
+    QSqlQuery probe(m_db);
+    return probe.exec(QStringLiteral("SELECT 1")) && probe.next();
+}
+
 QString Database::lastError() const
 {
     return m_lastError;

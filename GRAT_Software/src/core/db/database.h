@@ -28,6 +28,9 @@ public:
     void close();
 
     bool isConnected() const;
+    // Probes the live connection with a trivial query; reflects loss of the
+    // database file/connection after startup (Req 8.3–8.4).
+    bool isAlive() const;
     QString lastError() const;
     QSqlDatabase connection() const;
 
