@@ -58,7 +58,6 @@ MasterDetailWidget::MasterDetailWidget(Database &database, const ChildTableSpec 
     m_hintLabel = new QLabel(this);
     m_hintLabel->setObjectName(QStringLiteral("detailHintLabel"));
     m_hintLabel->setWordWrap(true);
-    m_hintLabel->setStyleSheet(QStringLiteral("color: #555555;"));
     layout->addWidget(m_hintLabel);
 
     m_grid = new QTableView(this);

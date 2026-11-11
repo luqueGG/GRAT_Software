@@ -18,6 +18,7 @@
 #include <QStandardItem>
 #include <QStandardItemModel>
 #include <QStringList>
+#include <QTabWidget>
 #include <QTableView>
 #include <QVBoxLayout>
 
@@ -25,6 +26,7 @@
 #include "core/auth/permission_checker.h"
 #include "core/crud/validator.h"
 #include "core/db/database.h"
+#include "ui/master_detail_widget.h"
 #include "ui/register_form.h"
 
 CrudWidget::CrudWidget(Database &database, const TableSpec &spec,
@@ -116,6 +118,21 @@ CrudWidget::CrudWidget(Database &database, const TableSpec &spec,
     splitter->addWidget(lowerPanel);
     splitter->setStretchFactor(0, 3);
     splitter->setStretchFactor(1, 2);
+
+    // Master-detail (design §5.2 / §7.4): the selected record's child rows are
+    // listed below the form, one tab per link table.
+    if (!m_spec.children.empty()) {
+        m_detailTabs = new QTabWidget(splitter);
+        m_detailTabs->setObjectName(QStringLiteral("detailTabs"));
+        for (const ChildTableSpec &child : m_spec.children) {
+            auto *detail = new MasterDetailWidget(m_database, child, m_session, m_detailTabs);
+            m_detailTabs->addTab(detail, detail->title());
+            m_details.append(detail);
+        }
+        splitter->addWidget(m_detailTabs);
+        splitter->setStretchFactor(2, 2);
+    }
+
     mainLayout->addWidget(splitter, 1);
 
     refreshGrid();
@@ -402,6 +419,29 @@ void CrudWidget::updateCommandState()
     // but only when they may change the table at all.
     m_updateButton->setEnabled(canChange);
     m_cancelButton->setEnabled(!idle);
+
+    updateDetails();
+}
+
+void CrudWidget::updateDetails()
+{
+    if (m_details.isEmpty())
+        return;
+
+    // Children belong to a saved parent: none while adding or with no selection.
+    const bool hasSelection = m_selectedRow >= 0 && m_selectedRow < m_records.size();
+    const QVariant parentKey = (hasSelection && m_operation != Operation::Adding)
+        ? currentPk()
+        : QVariant();
+
+    for (MasterDetailWidget *detail : m_details) {
+        // Only reload when the parent actually changes, so an unsaved child edit
+        // survives unrelated command-state updates.
+        if (detail->parentKey().toString() != parentKey.toString()
+            || detail->parentKey().isValid() != parentKey.isValid()) {
+            detail->setParentKey(parentKey);
+        }
+    }
 }
 
 QString CrudWidget::displayValue(const ColumnSpec &column, const QVariant &value) const
