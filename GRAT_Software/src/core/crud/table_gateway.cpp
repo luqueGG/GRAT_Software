@@ -216,6 +216,45 @@ DbResult TableGateway::setState(const TableSpec &spec, const QVariant &pk, const
     return res;
 }
 
+DbResult TableGateway::remove(const TableSpec &spec, const QVariant &pk) const
+{
+    DbResult res;
+    if (!m_db.isOpen()) {
+        res.error = QStringLiteral("The database is not connected.");
+        return res;
+    }
+
+    // Tables with a lifecycle are deleted logically via setState('*') (Req 4.1).
+    for (const auto &c : spec.columns) {
+        if (c.isState) {
+            res.error = genericError();
+            return res;
+        }
+    }
+
+    const bool useTx = m_db.transaction();
+    QSqlQuery q(m_db);
+    const QString sql = QStringLiteral("DELETE FROM %1 WHERE %2 = :pk")
+                            .arg(QString::fromLatin1(spec.table), QString::fromLatin1(spec.pkColumn));
+    if (!q.prepare(sql)) {
+        if (useTx) m_db.rollback();
+        res.error = genericError();
+        return res;
+    }
+    q.bindValue(QStringLiteral(":pk"), pk);
+    if (!q.exec()) {
+        if (useTx) m_db.rollback();
+        res.error = genericError();
+        return res;
+    }
+    if (useTx && !m_db.commit()) {
+        res.error = genericError();
+        return res;
+    }
+    res.success = true;
+    return res;
+}
+
 QString TableGateway::genericError()
 {
     return QStringLiteral("The operation could not be completed.");
