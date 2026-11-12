@@ -198,13 +198,7 @@ void MasterDetailWidget::refresh()
         loadReferenceLabels();
 
         // Only the rows belonging to the selected parent, in every state.
-        const QString fkToParent = QString::fromLatin1(m_child.fkToParent);
-        const QString parentKey = m_parentKey.toString();
-        const QList<QVariantMap> allRows = m_gateway.selectAll(m_spec);
-        for (const QVariantMap &row : allRows) {
-            if (row.value(fkToParent).toString() == parentKey)
-                m_records.append(row);
-        }
+        m_records = m_gateway.selectChildren(m_child, m_parentKey);
     }
 
     for (const QVariantMap &record : m_records) {
@@ -337,7 +331,8 @@ void MasterDetailWidget::removeRow()
     if (answer != QMessageBox::Yes)
         return;
 
-    const DbResult result = m_gateway.remove(m_spec, currentRecord().value(QStringLiteral("id")));
+    const DbResult result = m_gateway.removeChild(
+        m_child, m_parentKey, currentRecord().value(QStringLiteral("id")));
     if (!result.success) {
         QMessageBox::critical(this, tr("Operation failed"), result.error);
         return;
@@ -350,8 +345,8 @@ void MasterDetailWidget::applyState(const QString &newState)
     if (m_operation != Operation::Idle || m_selectedRow < 0 || !m_child.hasState)
         return;
 
-    const DbResult result = m_gateway.setState(
-        m_spec, currentRecord().value(QStringLiteral("id")), newState);
+    const DbResult result = m_gateway.setChildState(
+        m_child, m_parentKey, currentRecord().value(QStringLiteral("id")), newState);
     if (!result.success) {
         QMessageBox::critical(this, tr("Operation failed"), result.error);
         return;
@@ -370,15 +365,15 @@ void MasterDetailWidget::save()
 
     const bool isInsert = m_operation == Operation::Adding;
     QVariantMap values = m_form->collect();
-    if (isInsert)
-        values.insert(QString::fromLatin1(m_child.fkToParent), m_parentKey);
-    else if (m_selectedRow < 0)
+    if (!isInsert && m_selectedRow < 0)
         return;
+    values.insert(QString::fromLatin1(m_child.fkToParent), m_parentKey);
 
     // Same rules as the parent screens: report every invalid field and write
     // nothing when any fails (Req 7.4–7.5).
     const Validator validator(m_gateway);
-    const QList<ValidationError> errors = validator.validate(m_spec, values, isInsert);
+    const QList<ValidationError> errors = validator.validate(
+        m_spec, values, isInsert, isInsert ? QVariantMap() : currentRecord());
     if (!errors.isEmpty()) {
         QStringList details;
         details.reserve(errors.size());
@@ -391,8 +386,8 @@ void MasterDetailWidget::save()
     }
 
     const DbResult result = isInsert
-        ? m_gateway.insert(m_spec, values)
-        : m_gateway.update(m_spec, currentRecord().value(QStringLiteral("id")), values);
+        ? m_gateway.insertChild(m_child, m_parentKey, values)
+        : m_gateway.updateChild(m_child, m_parentKey, currentRecord().value(QStringLiteral("id")), values);
     if (!result.success) {
         QMessageBox::critical(this, tr("Save failed"), result.error);
         return;

@@ -36,11 +36,17 @@ public:
     // Read operations -------------------------------------------------------
     // All rows for the grid, regardless of is_active state (Req 2.1), ordered by PK.
     QList<QVariantMap> selectAll(const TableSpec &spec) const;
+    // Rows of one saved parent, including every lifecycle state, ordered by id.
+    QList<QVariantMap> selectChildren(const ChildTableSpec &child, const QVariant &parentKey) const;
     // All {pk, label} pairs of a referenced table (all states — Req 10.2) for ComboBoxes.
     QList<RefValue> loadRefValues(const QString &refTable, const QString &refPk,
                                    const QString &refDisplay) const;
     // True if a row with the given PK exists (duplicate-PK validation — Req 7.2).
     bool exists(const TableSpec &spec, const QVariant &pk) const;
+    // A constituent may occur only once per waste, including inactive/deleted rows.
+    // Exclude the edited row so changing its amount does not count as a duplicate.
+    bool constituentExists(const QVariant &wasteKey, const QVariant &constituentKey,
+                           const QVariant &excludePk = {}) const;
 
     // Write operations ------------------------------------------------------
     // Insert the provided column values (identity PK auto-generated; is_active/timestamp
@@ -54,8 +60,21 @@ public:
     // (design §4 / §7.4). Managed tables are never physically deleted.
     DbResult remove(const TableSpec &spec, const QVariant &pk) const;
 
+    // Child writes always use the selected parent, never a parent supplied by the form.
+    DbResult insertChild(const ChildTableSpec &child, const QVariant &parentKey,
+                         const QVariantMap &values) const;
+    DbResult updateChild(const ChildTableSpec &child, const QVariant &parentKey,
+                         const QVariant &pk, const QVariantMap &values) const;
+    DbResult removeChild(const ChildTableSpec &child, const QVariant &parentKey,
+                         const QVariant &pk) const;
+    DbResult setChildState(const ChildTableSpec &child, const QVariant &parentKey,
+                           const QVariant &pk, const QString &newState) const;
+
 private:
     static QString genericError();
+    // An empty assignment list means physical deletion; otherwise update these values.
+    DbResult writeChild(const ChildTableSpec &child, const QVariant &parentKey,
+                        const QVariant &pk, const QVariantMap &assignments) const;
 
     // The handle is shared/shallow; marking mutable lets const methods drive
     // transactions without changing the gateway's own state.

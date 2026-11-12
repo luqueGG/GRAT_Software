@@ -29,7 +29,9 @@ public:
     // Validate the provided values for a table.
     // isInsert=true  → required fields must be present; natural-PK uniqueness checked.
     // isInsert=false → only the columns present in values are validated (others unchanged).
-    QList<ValidationError> validate(const TableSpec &spec, const QVariantMap &values, bool isInsert) const;
+    // currentRecord supplies unchanged fields and the ID to exclude during child edits.
+    QList<ValidationError> validate(const TableSpec &spec, const QVariantMap &values, bool isInsert,
+                                   const QVariantMap &currentRecord = {}) const;
 
 private:
     const TableGateway &m_gateway;

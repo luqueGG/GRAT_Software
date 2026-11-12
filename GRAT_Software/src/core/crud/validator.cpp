@@ -10,7 +10,8 @@ Validator::Validator(const TableGateway &gateway)
 {
 }
 
-QList<ValidationError> Validator::validate(const TableSpec &spec, const QVariantMap &values, bool isInsert) const
+QList<ValidationError> Validator::validate(const TableSpec &spec, const QVariantMap &values, bool isInsert,
+                                          const QVariantMap &currentRecord) const
 {
     QList<ValidationError> errors;
     const QString pkCol = QString::fromLatin1(spec.pkColumn);
@@ -76,6 +77,24 @@ QList<ValidationError> Validator::validate(const TableSpec &spec, const QVariant
         if (!pkVal.isNull() && !pkVal.toString().isEmpty()) {
             if (m_gateway.exists(spec, pkVal))
                 errors.append({pkCol, QStringLiteral("A record with this identifier already exists.")});
+        }
+    }
+
+    if (QLatin1String(spec.table) == QLatin1String("waste_wasteconstituent")) {
+        // Updates can contain only changed fields. Recover the rest from the row
+        // being edited, and never mistake that same row for a duplicate.
+        QVariantMap effectiveValues = isInsert ? QVariantMap() : currentRecord;
+        for (auto it = values.cbegin(); it != values.cend(); ++it)
+            effectiveValues.insert(it.key(), it.value());
+        const QVariant waste = effectiveValues.value(QStringLiteral("id_waste_id"));
+        const QVariant constituent = effectiveValues.value(QStringLiteral("id_constituent_id"));
+        const QVariant excluded = isInsert ? QVariant() : currentRecord.value(pkCol);
+        if (!waste.isNull() && !waste.toString().isEmpty()
+            && !constituent.isNull() && !constituent.toString().isEmpty()
+            && m_gateway.constituentExists(waste, constituent, excluded)) {
+            errors.append({QStringLiteral("id_constituent_id"),
+                           QStringLiteral("This constituent is already linked to this waste. "
+                                          "Edit or reactivate the existing row instead.")});
         }
     }
 
