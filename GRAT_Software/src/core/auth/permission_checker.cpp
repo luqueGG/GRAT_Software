@@ -1,5 +1,11 @@
 #include "permission_checker.h"
 
+bool PermissionChecker::canManageRoles(const AuthSession &session)
+{
+    return session.isValid()
+        && (session.isSuperuser || session.roles.contains(QStringLiteral("Administrator")));
+}
+
 QString PermissionChecker::codename(PermissionAction action, const QString &appLabel,
                                     const QString &model)
 {

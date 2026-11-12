@@ -19,6 +19,9 @@ enum class PermissionAction {
 class PermissionChecker
 {
 public:
+    // Role administration is outside the system permission matrix.
+    static bool canManageRoles(const AuthSession &session);
+
     static bool can(const AuthSession &session, PermissionAction action,
                     const QString &appLabel, const QString &model);
 

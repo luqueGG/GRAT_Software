@@ -162,7 +162,9 @@ TableSpec MasterDetailWidget::toTableSpec(const ChildTableSpec &child)
 
 void MasterDetailWidget::setParentKey(const QVariant &key)
 {
-    const bool hasParent = key.isValid() && !key.toString().isEmpty();
+    const bool hasParent = key.isValid() && !key.toString().isEmpty()
+        && (QLatin1String(m_child.appLabel) != QLatin1String("admin")
+            || PermissionChecker::canManageRoles(m_session));
 
     // A new parent discards any unsaved child edit (Req 6.3).
     m_operation = Operation::Idle;
@@ -283,7 +285,8 @@ QVariantMap MasterDetailWidget::currentRecord() const
 
 void MasterDetailWidget::startAdd()
 {
-    if (m_operation != Operation::Idle || !m_parentKey.isValid())
+    if (m_operation != Operation::Idle || !m_parentKey.isValid()
+        || !allowed(PermissionAction::Add))
         return;
 
     m_operation = Operation::Adding;
@@ -300,7 +303,7 @@ void MasterDetailWidget::startAdd()
 
 void MasterDetailWidget::startEdit()
 {
-    if (m_operation != Operation::Idle)
+    if (m_operation != Operation::Idle || !allowed(PermissionAction::Change))
         return;
 
     if (m_selectedRow < 0) {
@@ -317,7 +320,8 @@ void MasterDetailWidget::startEdit()
 
 void MasterDetailWidget::removeRow()
 {
-    if (m_operation != Operation::Idle || m_selectedRow < 0)
+    if (m_operation != Operation::Idle || m_selectedRow < 0
+        || !m_parentKey.isValid() || !allowed(PermissionAction::Change))
         return;
 
     if (m_child.hasState) {
@@ -342,7 +346,8 @@ void MasterDetailWidget::removeRow()
 
 void MasterDetailWidget::applyState(const QString &newState)
 {
-    if (m_operation != Operation::Idle || m_selectedRow < 0 || !m_child.hasState)
+    if (m_operation != Operation::Idle || m_selectedRow < 0 || !m_child.hasState
+        || !allowed(PermissionAction::Change))
         return;
 
     const DbResult result = m_gateway.setChildState(
@@ -356,6 +361,11 @@ void MasterDetailWidget::applyState(const QString &newState)
 
 void MasterDetailWidget::save()
 {
+    if (!m_parentKey.isValid()
+        || !allowed(m_operation == Operation::Adding ? PermissionAction::Add
+                                                     : PermissionAction::Change))
+        return;
+
     if (m_operation == Operation::Idle) {
         QMessageBox::information(this, tr("Save %1").arg(title()),
                                  tr("There is no pending change to save. "
@@ -412,12 +422,15 @@ void MasterDetailWidget::cancel()
 
 bool MasterDetailWidget::allowed(PermissionAction action) const
 {
+    if (!m_session.isValid() || !m_database.isConnected())
+        return false;
+
     const QString appLabel = QString::fromLatin1(m_child.appLabel);
     const QString model = QString::fromLatin1(m_child.model);
 
-    // Role permissions (admin) are reserved for superusers (design §5.3).
+    // The same policy gates navigation and every role-permission operation.
     if (appLabel == QLatin1String("admin"))
-        return m_session.isSuperuser;
+        return PermissionChecker::canManageRoles(m_session);
 
     // A user's roles and extra permissions are RBAC assignments (design §9).
     if (appLabel == QLatin1String("user"))
