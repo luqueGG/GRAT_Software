@@ -279,6 +279,91 @@ DbResult TableGateway::remove(const TableSpec &spec, const QVariant &pk) const
     return res;
 }
 
+DbResult TableGateway::insertChild(const ChildTableSpec &child, const QVariant &parentKey,
+                                    const QVariantMap &values) const
+{
+    if (parentKey.isNull() || parentKey.toString().isEmpty())
+        return {false, QStringLiteral("Select a saved parent record first."), {}};
+
+    TableSpec spec;
+    spec.table = child.table;
+    spec.pkColumn = "id";
+    spec.identityPk = true;
+    spec.columns = child.columns;
+    QVariantMap childValues = values;
+    childValues.insert(QString::fromLatin1(child.fkToParent), parentKey);
+    return insert(spec, childValues);
+}
+
+DbResult TableGateway::updateChild(const ChildTableSpec &child, const QVariant &parentKey,
+                                    const QVariant &pk, const QVariantMap &values) const
+{
+    QVariantMap assignments;
+    for (const auto &column : child.columns) {
+        const QString name = QString::fromLatin1(column.dbColumn);
+        if (name == QLatin1String("id") || name == QLatin1String(child.fkToParent)
+            || column.isState || column.autoManaged || !column.editable)
+            continue;
+        if (values.contains(name))
+            assignments.insert(name, values.value(name));
+    }
+    if (assignments.isEmpty())
+        return {false, QStringLiteral("There are no values to update."), {}};
+    return writeChild(child, parentKey, pk, assignments);
+}
+
+DbResult TableGateway::removeChild(const ChildTableSpec &child, const QVariant &parentKey,
+                                    const QVariant &pk) const
+{
+    if (child.hasState)
+        return setChildState(child, parentKey, pk, QStringLiteral("*"));
+    return writeChild(child, parentKey, pk, {});
+}
+
+DbResult TableGateway::setChildState(const ChildTableSpec &child, const QVariant &parentKey,
+                                      const QVariant &pk, const QString &newState) const
+{
+    if (!child.hasState || (newState != QLatin1String("A") && newState != QLatin1String("I")
+                            && newState != QLatin1String("*")))
+        return {false, genericError(), {}};
+    return writeChild(child, parentKey, pk, {{QStringLiteral("is_active"), newState}});
+}
+
+DbResult TableGateway::writeChild(const ChildTableSpec &child, const QVariant &parentKey,
+                                   const QVariant &pk, const QVariantMap &assignments) const
+{
+    if (!m_db.isOpen())
+        return {false, QStringLiteral("The database is not connected."), {}};
+    if (parentKey.isNull() || parentKey.toString().isEmpty() || pk.isNull())
+        return {false, QStringLiteral("Select a saved child record first."), {}};
+
+    QStringList clauses;
+    for (auto it = assignments.cbegin(); it != assignments.cend(); ++it)
+        clauses << QStringLiteral("%1 = :value_%1").arg(it.key());
+    const QString table = QString::fromLatin1(child.table);
+    const QString command = assignments.isEmpty()
+        ? QStringLiteral("DELETE FROM %1").arg(table)
+        : QStringLiteral("UPDATE %1 SET %2").arg(table, clauses.join(QStringLiteral(", ")));
+
+    if (!m_db.transaction())
+        return {false, genericError(), {}};
+    QSqlQuery q(m_db);
+    bool ok = q.prepare(command + QStringLiteral(" WHERE id = :child_pk AND %1 = :parent_pk")
+                                      .arg(QString::fromLatin1(child.fkToParent)));
+    if (ok) {
+        for (auto it = assignments.cbegin(); it != assignments.cend(); ++it)
+            q.bindValue(QStringLiteral(":value_") + it.key(), it.value());
+        q.bindValue(QStringLiteral(":child_pk"), pk);
+        q.bindValue(QStringLiteral(":parent_pk"), parentKey);
+        ok = q.exec() && q.numRowsAffected() == 1;
+    }
+    if (!ok || !m_db.commit()) {
+        m_db.rollback();
+        return {false, genericError(), {}};
+    }
+    return {true, {}, pk};
+}
+
 QString TableGateway::genericError()
 {
     return QStringLiteral("The operation could not be completed.");

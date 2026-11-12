@@ -56,8 +56,21 @@ public:
     // (design §4 / §7.4). Managed tables are never physically deleted.
     DbResult remove(const TableSpec &spec, const QVariant &pk) const;
 
+    // Child writes always use the selected parent, never a parent supplied by the form.
+    DbResult insertChild(const ChildTableSpec &child, const QVariant &parentKey,
+                         const QVariantMap &values) const;
+    DbResult updateChild(const ChildTableSpec &child, const QVariant &parentKey,
+                         const QVariant &pk, const QVariantMap &values) const;
+    DbResult removeChild(const ChildTableSpec &child, const QVariant &parentKey,
+                         const QVariant &pk) const;
+    DbResult setChildState(const ChildTableSpec &child, const QVariant &parentKey,
+                           const QVariant &pk, const QString &newState) const;
+
 private:
     static QString genericError();
+    // An empty assignment list means physical deletion; otherwise update these values.
+    DbResult writeChild(const ChildTableSpec &child, const QVariant &parentKey,
+                        const QVariant &pk, const QVariantMap &assignments) const;
 
     // The handle is shared/shallow; marking mutable lets const methods drive
     // transactions without changing the gateway's own state.
