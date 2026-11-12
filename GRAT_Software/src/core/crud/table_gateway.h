@@ -43,6 +43,10 @@ public:
                                    const QString &refDisplay) const;
     // True if a row with the given PK exists (duplicate-PK validation — Req 7.2).
     bool exists(const TableSpec &spec, const QVariant &pk) const;
+    // A constituent may occur only once per waste, including inactive/deleted rows.
+    // Exclude the edited row so changing its amount does not count as a duplicate.
+    bool constituentExists(const QVariant &wasteKey, const QVariant &constituentKey,
+                           const QVariant &excludePk = {}) const;
 
     // Write operations ------------------------------------------------------
     // Insert the provided column values (identity PK auto-generated; is_active/timestamp

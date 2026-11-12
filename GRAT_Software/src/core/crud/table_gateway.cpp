@@ -98,6 +98,26 @@ bool TableGateway::exists(const TableSpec &spec, const QVariant &pk) const
     return q.next();
 }
 
+bool TableGateway::constituentExists(const QVariant &wasteKey, const QVariant &constituentKey,
+                                       const QVariant &excludePk) const
+{
+    if (!m_db.isOpen() || wasteKey.isNull() || constituentKey.isNull())
+        return false;
+
+    QString sql = QStringLiteral("SELECT 1 FROM waste_wasteconstituent "
+                                "WHERE id_waste_id = :waste AND id_constituent_id = :constituent");
+    if (!excludePk.isNull())
+        sql += QStringLiteral(" AND id <> :excluded");
+    QSqlQuery q(m_db);
+    if (!q.prepare(sql + QStringLiteral(" LIMIT 1")))
+        return false;
+    q.bindValue(QStringLiteral(":waste"), wasteKey);
+    q.bindValue(QStringLiteral(":constituent"), constituentKey);
+    if (!excludePk.isNull())
+        q.bindValue(QStringLiteral(":excluded"), excludePk);
+    return q.exec() && q.next();
+}
+
 DbResult TableGateway::insert(const TableSpec &spec, const QVariantMap &values) const
 {
     DbResult res;

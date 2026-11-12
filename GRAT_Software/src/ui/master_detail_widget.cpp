@@ -372,7 +372,8 @@ void MasterDetailWidget::save()
     // Same rules as the parent screens: report every invalid field and write
     // nothing when any fails (Req 7.4–7.5).
     const Validator validator(m_gateway);
-    const QList<ValidationError> errors = validator.validate(m_spec, values, isInsert);
+    const QList<ValidationError> errors = validator.validate(
+        m_spec, values, isInsert, isInsert ? QVariantMap() : currentRecord());
     if (!errors.isEmpty()) {
         QStringList details;
         details.reserve(errors.size());
