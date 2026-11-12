@@ -4,6 +4,8 @@
 #include <QSqlQuery>
 #include <QSqlRecord>
 
+#include "core/auth/permission_checker.h"
+
 TableGateway::TableGateway(QSqlDatabase db)
     : m_db(db)
 {
@@ -69,18 +71,29 @@ QList<QVariantMap> TableGateway::rolePermissionCatalog(const QVariant &roleKey,
 }
 
 QList<QVariantMap> TableGateway::selectChildren(const ChildTableSpec &child,
-                                               const QVariant &parentKey) const
+                                               const QVariant &parentKey,
+                                               QString *errorMessage) const
 {
+    if (errorMessage)
+        errorMessage->clear();
     QList<QVariantMap> rows;
-    if (!m_db.isOpen() || parentKey.isNull() || parentKey.toString().isEmpty())
+    if (parentKey.isNull() || parentKey.toString().isEmpty())
         return rows;
+    if (!m_db.isOpen()) {
+        if (errorMessage)
+            *errorMessage = QStringLiteral("The database is not connected.");
+        return rows;
+    }
 
     QSqlQuery q(m_db);
     q.prepare(QStringLiteral("SELECT * FROM %1 WHERE %2 = ? ORDER BY id")
                   .arg(QString::fromLatin1(child.table), QString::fromLatin1(child.fkToParent)));
     q.addBindValue(parentKey);
-    if (!q.exec())
+    if (!q.exec()) {
+        if (errorMessage)
+            *errorMessage = QStringLiteral("The assigned records could not be loaded.");
         return rows;
+    }
 
     const QSqlRecord rec = q.record();
     while (q.next()) {
@@ -424,4 +437,78 @@ DbResult TableGateway::writeChild(const ChildTableSpec &child, const QVariant &p
 QString TableGateway::genericError()
 {
     return QStringLiteral("The operation could not be completed.");
+}
+
+DbResult TableGateway::grantRolePermission(const AuthSession &session, const QVariant &roleKey,
+                                           const QVariant &permissionKey) const
+{
+    return writeRolePermission(session, roleKey, permissionKey, true);
+}
+
+DbResult TableGateway::revokeRolePermission(const AuthSession &session, const QVariant &roleKey,
+                                            const QVariant &linkKey) const
+{
+    return writeRolePermission(session, roleKey, linkKey, false);
+}
+
+DbResult TableGateway::writeRolePermission(const AuthSession &session, const QVariant &roleKey,
+                                           const QVariant &key, bool grant) const
+{
+    if (!PermissionChecker::canManageRoles(session))
+        return {false, QStringLiteral("You are not authorized to manage roles."), {}};
+    if (!m_db.isOpen())
+        return {false, QStringLiteral("The database is not connected."), {}};
+
+    bool roleValid = false;
+    bool keyValid = false;
+    const qint64 roleId = roleKey.toLongLong(&roleValid);
+    const qint64 selectedId = key.toLongLong(&keyValid);
+    if (!roleValid || !keyValid || roleId <= 0 || selectedId <= 0)
+        return {false, QStringLiteral("Select a valid role and permission first."), {}};
+    if (!m_db.transaction())
+        return {false, genericError(), {}};
+
+    auto fail = [this](const QString &message) -> DbResult {
+        m_db.rollback();
+        return {false, message, {}};
+    };
+
+    if (grant) {
+        QSqlQuery check(m_db);
+        if (!check.prepare(QStringLiteral(
+                "SELECT EXISTS(SELECT 1 FROM auth_group WHERE id = :role), "
+                "EXISTS(SELECT 1 FROM auth_permission WHERE id = :permission), "
+                "EXISTS(SELECT 1 FROM auth_group_permissions "
+                "WHERE group_id = :role AND permission_id = :permission)")))
+            return fail(genericError());
+        check.bindValue(QStringLiteral(":role"), roleId);
+        check.bindValue(QStringLiteral(":permission"), selectedId);
+        if (!check.exec() || !check.next())
+            return fail(genericError());
+        const bool selectionExists = check.value(0).toBool() && check.value(1).toBool();
+        const bool duplicate = check.value(2).toBool();
+        check.finish();
+        if (!selectionExists)
+            return fail(QStringLiteral("The selected role or permission is no longer available."));
+        if (duplicate)
+            return fail(QStringLiteral("This permission is already assigned to the selected role."));
+    }
+
+    QSqlQuery query(m_db);
+    const QString sql = grant
+        ? QStringLiteral("INSERT INTO auth_group_permissions (group_id, permission_id) "
+                         "VALUES (:role, :selected)")
+        : QStringLiteral("DELETE FROM auth_group_permissions "
+                         "WHERE group_id = :role AND id = :selected");
+    if (!query.prepare(sql))
+        return fail(genericError());
+    query.bindValue(QStringLiteral(":role"), roleId);
+    query.bindValue(QStringLiteral(":selected"), selectedId);
+    if (!query.exec() || query.numRowsAffected() != 1)
+        return fail(genericError());
+    const QVariant resultKey = grant ? query.lastInsertId() : key;
+    query.finish();
+    if (!m_db.commit())
+        return fail(genericError());
+    return {true, {}, resultKey};
 }

@@ -95,6 +95,8 @@ AdminRolesWidget::AdminRolesWidget(Database &database, const AuthSession &sessio
     layout->addWidget(splitter, 1);
     connect(m_rolesGrid->selectionModel(), &QItemSelectionModel::selectionChanged,
             this, &AdminRolesWidget::selectRole);
+    connect(m_detail, &MasterDetailWidget::permissionsChanged,
+            this, &AdminRolesWidget::refreshCatalog);
     refreshCatalog();
 }
 
