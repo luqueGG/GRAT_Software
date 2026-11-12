@@ -31,6 +31,30 @@ QList<QVariantMap> TableGateway::selectAll(const TableSpec &spec) const
     return rows;
 }
 
+QList<QVariantMap> TableGateway::selectChildren(const ChildTableSpec &child,
+                                               const QVariant &parentKey) const
+{
+    QList<QVariantMap> rows;
+    if (!m_db.isOpen() || parentKey.isNull() || parentKey.toString().isEmpty())
+        return rows;
+
+    QSqlQuery q(m_db);
+    q.prepare(QStringLiteral("SELECT * FROM %1 WHERE %2 = ? ORDER BY id")
+                  .arg(QString::fromLatin1(child.table), QString::fromLatin1(child.fkToParent)));
+    q.addBindValue(parentKey);
+    if (!q.exec())
+        return rows;
+
+    const QSqlRecord rec = q.record();
+    while (q.next()) {
+        QVariantMap row;
+        for (int i = 0; i < rec.count(); ++i)
+            row.insert(rec.fieldName(i), q.value(i));
+        rows.append(row);
+    }
+    return rows;
+}
+
 QList<RefValue> TableGateway::loadRefValues(const QString &refTable, const QString &refPk,
                                              const QString &refDisplay) const
 {

@@ -198,13 +198,7 @@ void MasterDetailWidget::refresh()
         loadReferenceLabels();
 
         // Only the rows belonging to the selected parent, in every state.
-        const QString fkToParent = QString::fromLatin1(m_child.fkToParent);
-        const QString parentKey = m_parentKey.toString();
-        const QList<QVariantMap> allRows = m_gateway.selectAll(m_spec);
-        for (const QVariantMap &row : allRows) {
-            if (row.value(fkToParent).toString() == parentKey)
-                m_records.append(row);
-        }
+        m_records = m_gateway.selectChildren(m_child, m_parentKey);
     }
 
     for (const QVariantMap &record : m_records) {

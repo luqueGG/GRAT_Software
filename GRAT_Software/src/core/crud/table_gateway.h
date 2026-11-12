@@ -36,6 +36,8 @@ public:
     // Read operations -------------------------------------------------------
     // All rows for the grid, regardless of is_active state (Req 2.1), ordered by PK.
     QList<QVariantMap> selectAll(const TableSpec &spec) const;
+    // Rows of one saved parent, including every lifecycle state, ordered by id.
+    QList<QVariantMap> selectChildren(const ChildTableSpec &child, const QVariant &parentKey) const;
     // All {pk, label} pairs of a referenced table (all states — Req 10.2) for ComboBoxes.
     QList<RefValue> loadRefValues(const QString &refTable, const QString &refPk,
                                    const QString &refDisplay) const;
