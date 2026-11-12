@@ -13,6 +13,8 @@
 
 #include "core/crud/table_spec.h"
 
+struct AuthSession;
+
 // Outcome of a write operation (insert/update/setState).
 struct DbResult
 {
@@ -35,9 +37,13 @@ public:
 
     // Read operations -------------------------------------------------------
     // All rows for the grid, regardless of is_active state (Req 2.1), ordered by PK.
-    QList<QVariantMap> selectAll(const TableSpec &spec) const;
+    QList<QVariantMap> selectAll(const TableSpec &spec, QString *errorMessage = nullptr) const;
+    // The fixed permission definitions, with assignment status for the selected role.
+    QList<QVariantMap> rolePermissionCatalog(const QVariant &roleKey,
+                                           QString *errorMessage = nullptr) const;
     // Rows of one saved parent, including every lifecycle state, ordered by id.
-    QList<QVariantMap> selectChildren(const ChildTableSpec &child, const QVariant &parentKey) const;
+    QList<QVariantMap> selectChildren(const ChildTableSpec &child, const QVariant &parentKey,
+                                     QString *errorMessage = nullptr) const;
     // All {pk, label} pairs of a referenced table (all states — Req 10.2) for ComboBoxes.
     QList<RefValue> loadRefValues(const QString &refTable, const QString &refPk,
                                    const QString &refDisplay) const;
@@ -49,6 +55,11 @@ public:
                            const QVariant &excludePk = {}) const;
 
     // Write operations ------------------------------------------------------
+    // Explicitly authorized role-permission writes; definitions are never modified.
+    DbResult grantRolePermission(const AuthSession &session, const QVariant &roleKey,
+                                 const QVariant &permissionKey) const;
+    DbResult revokeRolePermission(const AuthSession &session, const QVariant &roleKey,
+                                  const QVariant &linkKey) const;
     // Insert the provided column values (identity PK auto-generated; is_active/timestamp
     // defaults applied by the DB). Runs in a transaction.
     DbResult insert(const TableSpec &spec, const QVariantMap &values) const;
@@ -71,6 +82,8 @@ public:
                            const QVariant &pk, const QString &newState) const;
 
 private:
+    DbResult writeRolePermission(const AuthSession &session, const QVariant &roleKey,
+                                 const QVariant &key, bool grant) const;
     static QString genericError();
     // An empty assignment list means physical deletion; otherwise update these values.
     DbResult writeChild(const ChildTableSpec &child, const QVariant &parentKey,

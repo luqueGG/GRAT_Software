@@ -50,6 +50,9 @@ public:
     // Reload the child rows of the current parent.
     void refresh();
 
+signals:
+    void permissionsChanged();
+
 private slots:
     void onSelectionChanged();
 
@@ -68,6 +71,7 @@ private:
     void cancel();
     void updateCommandState();
     bool allowed(PermissionAction action) const;
+    bool isRolePermissions() const;
     QVariantMap currentRecord() const;
 
     // A child spec viewed as a regular TableSpec with its identity 'id' PK, so the
@@ -103,6 +107,7 @@ private:
     QList<QVariantMap> m_records;
     int m_selectedRow = -1;
     bool m_refreshing = false;
+    bool m_rowsLoaded = false;
 
     // FK column → (referenced pk as string → display label) for the grid.
     QHash<QString, QHash<QString, QString>> m_refLabels;

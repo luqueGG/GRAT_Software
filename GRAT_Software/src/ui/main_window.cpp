@@ -17,6 +17,7 @@
 #include "core/auth/permission_checker.h"
 #include "core/db/database.h"
 #include "ui/crud_widget.h"
+#include "ui/admin_roles_widget.h"
 #include "ui_main_window.h"
 
 namespace {
@@ -165,7 +166,7 @@ bool MainWindow::canView(const TableSpec &spec) const
     // The Admin → Roles screen is outside the 43-permission matrix and reserved
     // for Administrators/superusers (design §5.3).
     if (QString::fromLatin1(spec.module) == QLatin1String("admin"))
-        return m_session.isSuperuser;
+        return PermissionChecker::canManageRoles(m_session);
 
     return PermissionChecker::can(m_session, PermissionAction::View,
                                   QString::fromLatin1(spec.appLabel),
@@ -184,7 +185,7 @@ void MainWindow::showPage(QTreeWidgetItem *current, QTreeWidgetItem *previous)
         return;
 
     const TableSpec *spec = findTableSpec(table);
-    if (!spec)
+    if (!spec || !canView(*spec))
         return;
 
     QWidget *page = m_pages.value(table, nullptr);
@@ -200,6 +201,9 @@ void MainWindow::showPage(QTreeWidgetItem *current, QTreeWidgetItem *previous)
 
 QWidget *MainWindow::createPage(const TableSpec &spec)
 {
+    if (QString::fromLatin1(spec.table) == QLatin1String("auth_group"))
+        return new AdminRolesWidget(m_database, m_session, m_ui->stackedWidget);
+
     return new CrudWidget(m_database, spec, m_session,
                           tableTitle(QString::fromLatin1(spec.table)),
                           m_ui->stackedWidget);
@@ -283,7 +287,7 @@ QString MainWindow::tableTitle(const QString &table) const
         {QStringLiteral("transfer_destination"), tr("Destinations")},
         {QStringLiteral("transfer_travelcompany"), tr("Travel Companies")},
         {QStringLiteral("transfer_transfer"), tr("Transfers")},
-        {QStringLiteral("auth_group"), tr("Roles & Permissions")},
+        {QStringLiteral("auth_group"), tr("Roles")},
     };
     return titles.value(table, table);
 }

@@ -97,6 +97,11 @@ MasterDetailWidget::MasterDetailWidget(Database &database, const ChildTableSpec 
     m_reactivateButton = makeButton(tr("Reactivate"), QStringLiteral("detailReactivateButton"));
     m_saveButton = makeButton(tr("Save"), QStringLiteral("detailSaveButton"));
     m_cancelButton = makeButton(tr("Cancel"), QStringLiteral("detailCancelButton"));
+    if (isRolePermissions()) {
+        m_addButton->setText(tr("Grant"));
+        m_removeButton->setText(tr("Revoke"));
+        m_editButton->hide();
+    }
     m_inactivateButton->setVisible(m_child.hasState);
     m_reactivateButton->setVisible(m_child.hasState);
 
@@ -162,14 +167,17 @@ TableSpec MasterDetailWidget::toTableSpec(const ChildTableSpec &child)
 
 void MasterDetailWidget::setParentKey(const QVariant &key)
 {
-    const bool hasParent = key.isValid() && !key.toString().isEmpty();
+    const bool hasParent = key.isValid() && !key.toString().isEmpty()
+        && (QLatin1String(m_child.appLabel) != QLatin1String("admin")
+            || PermissionChecker::canManageRoles(m_session));
 
     // A new parent discards any unsaved child edit (Req 6.3).
     m_operation = Operation::Idle;
     m_parentKey = hasParent ? key : QVariant();
 
     m_hintLabel->setText(hasParent
-                             ? tr("Rows linked to the selected record.")
+                             ? (isRolePermissions() ? tr("Permissions assigned to the selected role.")
+                                                    : tr("Rows linked to the selected record."))
                              : tr("Select a saved record above to see its %1.")
                                    .arg(title().toLower()));
     setEnabled(hasParent);
@@ -193,12 +201,17 @@ void MasterDetailWidget::refresh()
     m_gridModel->removeRows(0, m_gridModel->rowCount());
     m_records.clear();
     m_selectedRow = -1;
+    m_rowsLoaded = false;
 
     if (m_parentKey.isValid()) {
         loadReferenceLabels();
 
         // Only the rows belonging to the selected parent, in every state.
-        m_records = m_gateway.selectChildren(m_child, m_parentKey);
+        QString error;
+        m_records = m_gateway.selectChildren(m_child, m_parentKey, &error);
+        m_rowsLoaded = error.isEmpty();
+        if (!error.isEmpty())
+            m_hintLabel->setText(error);
     }
 
     for (const QVariantMap &record : m_records) {
@@ -283,7 +296,8 @@ QVariantMap MasterDetailWidget::currentRecord() const
 
 void MasterDetailWidget::startAdd()
 {
-    if (m_operation != Operation::Idle || !m_parentKey.isValid())
+    if (m_operation != Operation::Idle || !m_parentKey.isValid()
+        || !allowed(PermissionAction::Add))
         return;
 
     m_operation = Operation::Adding;
@@ -300,7 +314,8 @@ void MasterDetailWidget::startAdd()
 
 void MasterDetailWidget::startEdit()
 {
-    if (m_operation != Operation::Idle)
+    if (isRolePermissions() || m_operation != Operation::Idle
+        || !allowed(PermissionAction::Change))
         return;
 
     if (m_selectedRow < 0) {
@@ -317,7 +332,8 @@ void MasterDetailWidget::startEdit()
 
 void MasterDetailWidget::removeRow()
 {
-    if (m_operation != Operation::Idle || m_selectedRow < 0)
+    if (m_operation != Operation::Idle || m_selectedRow < 0
+        || !m_parentKey.isValid() || !allowed(PermissionAction::Change))
         return;
 
     if (m_child.hasState) {
@@ -326,23 +342,29 @@ void MasterDetailWidget::removeRow()
     }
 
     const auto answer = QMessageBox::question(
-        this, tr("Remove %1").arg(title()),
-        tr("Remove the selected row? This link will be deleted permanently."));
-    if (answer != QMessageBox::Yes)
+        this, isRolePermissions() ? tr("Revoke Permission") : tr("Remove %1").arg(title()),
+        isRolePermissions() ? tr("Revoke the selected permission from this role?")
+                            : tr("Remove the selected row? This link will be deleted permanently."));
+    if (answer != QMessageBox::Yes || !allowed(PermissionAction::Change))
         return;
 
-    const DbResult result = m_gateway.removeChild(
-        m_child, m_parentKey, currentRecord().value(QStringLiteral("id")));
+    const QVariant linkKey = currentRecord().value(QStringLiteral("id"));
+    const DbResult result = isRolePermissions()
+        ? m_gateway.revokeRolePermission(m_session, m_parentKey, linkKey)
+        : m_gateway.removeChild(m_child, m_parentKey, linkKey);
     if (!result.success) {
         QMessageBox::critical(this, tr("Operation failed"), result.error);
         return;
     }
     refresh();
+    if (isRolePermissions())
+        emit permissionsChanged();
 }
 
 void MasterDetailWidget::applyState(const QString &newState)
 {
-    if (m_operation != Operation::Idle || m_selectedRow < 0 || !m_child.hasState)
+    if (m_operation != Operation::Idle || m_selectedRow < 0 || !m_child.hasState
+        || !allowed(PermissionAction::Change))
         return;
 
     const DbResult result = m_gateway.setChildState(
@@ -356,6 +378,11 @@ void MasterDetailWidget::applyState(const QString &newState)
 
 void MasterDetailWidget::save()
 {
+    if (!m_parentKey.isValid()
+        || !allowed(m_operation == Operation::Adding ? PermissionAction::Add
+                                                     : PermissionAction::Change))
+        return;
+
     if (m_operation == Operation::Idle) {
         QMessageBox::information(this, tr("Save %1").arg(title()),
                                  tr("There is no pending change to save. "
@@ -385,9 +412,17 @@ void MasterDetailWidget::save()
         return;
     }
 
-    const DbResult result = isInsert
-        ? m_gateway.insertChild(m_child, m_parentKey, values)
-        : m_gateway.updateChild(m_child, m_parentKey, currentRecord().value(QStringLiteral("id")), values);
+    DbResult result;
+    if (isRolePermissions()) {
+        if (!isInsert)
+            return; // Grant and revoke links; never edit system permission definitions.
+        result = m_gateway.grantRolePermission(
+            m_session, m_parentKey, values.value(QStringLiteral("permission_id")));
+    } else {
+        result = isInsert
+            ? m_gateway.insertChild(m_child, m_parentKey, values)
+            : m_gateway.updateChild(m_child, m_parentKey, currentRecord().value(QStringLiteral("id")), values);
+    }
     if (!result.success) {
         QMessageBox::critical(this, tr("Save failed"), result.error);
         return;
@@ -395,6 +430,8 @@ void MasterDetailWidget::save()
 
     m_operation = Operation::Idle;
     refresh();
+    if (isRolePermissions())
+        emit permissionsChanged();
 }
 
 void MasterDetailWidget::cancel()
@@ -412,18 +449,26 @@ void MasterDetailWidget::cancel()
 
 bool MasterDetailWidget::allowed(PermissionAction action) const
 {
+    if (!m_session.isValid() || !m_database.isConnected())
+        return false;
+
     const QString appLabel = QString::fromLatin1(m_child.appLabel);
     const QString model = QString::fromLatin1(m_child.model);
 
-    // Role permissions (admin) are reserved for superusers (design §5.3).
+    // The same policy gates navigation and every role-permission operation.
     if (appLabel == QLatin1String("admin"))
-        return m_session.isSuperuser;
+        return m_rowsLoaded && PermissionChecker::canManageRoles(m_session);
 
     // A user's roles and extra permissions are RBAC assignments (design §9).
     if (appLabel == QLatin1String("user"))
         return PermissionChecker::can(m_session, PermissionAction::AssignRole, appLabel, model);
 
     return PermissionChecker::can(m_session, action, appLabel, model);
+}
+
+bool MasterDetailWidget::isRolePermissions() const
+{
+    return QLatin1String(m_child.table) == QLatin1String("auth_group_permissions");
 }
 
 void MasterDetailWidget::updateCommandState()
@@ -439,7 +484,7 @@ void MasterDetailWidget::updateCommandState()
     m_removeButton->setEnabled(idle && hasSelection && canChange);
     m_inactivateButton->setEnabled(idle && hasSelection && canChange);
     m_reactivateButton->setEnabled(idle && hasSelection && canChange);
-    m_saveButton->setEnabled(!idle);
+    m_saveButton->setEnabled(!idle && (m_operation == Operation::Adding ? canAdd : canChange));
     m_cancelButton->setEnabled(!idle);
 }
 
