@@ -35,7 +35,10 @@ public:
 
     // Read operations -------------------------------------------------------
     // All rows for the grid, regardless of is_active state (Req 2.1), ordered by PK.
-    QList<QVariantMap> selectAll(const TableSpec &spec) const;
+    QList<QVariantMap> selectAll(const TableSpec &spec, QString *errorMessage = nullptr) const;
+    // The fixed permission definitions, with assignment status for the selected role.
+    QList<QVariantMap> rolePermissionCatalog(const QVariant &roleKey,
+                                           QString *errorMessage = nullptr) const;
     // Rows of one saved parent, including every lifecycle state, ordered by id.
     QList<QVariantMap> selectChildren(const ChildTableSpec &child, const QVariant &parentKey) const;
     // All {pk, label} pairs of a referenced table (all states — Req 10.2) for ComboBoxes.

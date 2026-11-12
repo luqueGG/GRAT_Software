@@ -9,23 +9,60 @@ TableGateway::TableGateway(QSqlDatabase db)
 {
 }
 
-QList<QVariantMap> TableGateway::selectAll(const TableSpec &spec) const
+QList<QVariantMap> TableGateway::selectAll(const TableSpec &spec, QString *errorMessage) const
 {
+    if (errorMessage)
+        errorMessage->clear();
     QList<QVariantMap> rows;
-    if (!m_db.isOpen())
+    if (!m_db.isOpen()) {
+        if (errorMessage)
+            *errorMessage = QStringLiteral("The database is not connected.");
         return rows;
+    }
 
     QSqlQuery q(m_db);
     const QString sql = QStringLiteral("SELECT * FROM %1 ORDER BY %2")
                             .arg(QString::fromLatin1(spec.table), QString::fromLatin1(spec.pkColumn));
-    if (!q.exec(sql))
+    if (!q.exec(sql)) {
+        if (errorMessage)
+            *errorMessage = QStringLiteral("The records could not be loaded.");
         return rows;
+    }
 
     while (q.next()) {
         QVariantMap row;
         const QSqlRecord rec = q.record();
         for (int i = 0; i < rec.count(); ++i)
             row.insert(rec.fieldName(i), q.value(i));
+        rows.append(row);
+    }
+    return rows;
+}
+
+QList<QVariantMap> TableGateway::rolePermissionCatalog(const QVariant &roleKey,
+                                                      QString *errorMessage) const
+{
+    if (errorMessage)
+        errorMessage->clear();
+    QList<QVariantMap> rows;
+    QSqlQuery query(m_db);
+    const bool ok = m_db.isOpen() && query.prepare(QStringLiteral(
+        "SELECT p.id, p.name, p.app_label, p.model, p.codename, "
+        "EXISTS(SELECT 1 FROM auth_group_permissions gp "
+        "WHERE gp.permission_id = p.id AND gp.group_id = :role) AS assigned "
+        "FROM auth_permission p ORDER BY p.app_label, p.model, p.codename"));
+    if (ok)
+        query.bindValue(QStringLiteral(":role"), roleKey);
+    if (!ok || !query.exec()) {
+        if (errorMessage)
+            *errorMessage = QStringLiteral("The permission catalog could not be loaded.");
+        return rows;
+    }
+    const QSqlRecord record = query.record();
+    while (query.next()) {
+        QVariantMap row;
+        for (int i = 0; i < record.count(); ++i)
+            row.insert(record.fieldName(i), query.value(i));
         rows.append(row);
     }
     return rows;
