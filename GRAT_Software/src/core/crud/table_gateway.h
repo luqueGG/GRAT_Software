@@ -50,6 +50,9 @@ public:
     DbResult update(const TableSpec &spec, const QVariant &pk, const QVariantMap &values) const;
     // Logical state transition: Delete('*'), Inactivate('I'), Reactivate('A') (Req 4).
     DbResult setState(const TableSpec &spec, const QVariant &pk, const QString &newState) const;
+    // Physical delete, only for link tables without an is_active lifecycle
+    // (design §4 / §7.4). Managed tables are never physically deleted.
+    DbResult remove(const TableSpec &spec, const QVariant &pk) const;
 
 private:
     static QString genericError();

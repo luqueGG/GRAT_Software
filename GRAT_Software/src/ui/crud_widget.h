@@ -17,9 +17,11 @@
 #include "core/crud/table_spec.h"
 
 class Database;
+class MasterDetailWidget;
 class QPushButton;
 class QStandardItemModel;
 class QTableView;
+class QTabWidget;
 class RegisterForm;
 
 class CrudWidget : public QWidget
@@ -55,6 +57,7 @@ private:
     void updateRecord();
     void cancelOperation();
     void updateCommandState();
+    void updateDetails();
 
     Database &m_database;
     const TableSpec &m_spec;
@@ -78,4 +81,8 @@ private:
     QPushButton *m_reactivateButton = nullptr;
     QPushButton *m_updateButton = nullptr;
     QPushButton *m_cancelButton = nullptr;
+
+    // Master-detail children (design §7.4): one tab per ChildTableSpec.
+    QTabWidget *m_detailTabs = nullptr;
+    QList<MasterDetailWidget *> m_details;
 };
