@@ -20,12 +20,17 @@ public:
     explicit AdminRolesWidget(Database &database, const AuthSession &session,
                               QWidget *parent = nullptr);
 
+    // Reload roles, permission assignments and FK lists after a recovery.
+    void refreshAfterReconnect();
+
 private:
+    void loadRoles();
     void selectRole();
     void refreshCatalog();
 
     AuthSession m_session;
     TableGateway m_gateway;
+    QLabel *m_errorLabel = nullptr;
     QTableView *m_rolesGrid = nullptr;
     QStandardItemModel *m_rolesModel = nullptr;
     MasterDetailWidget *m_detail = nullptr;

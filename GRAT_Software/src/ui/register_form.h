@@ -40,6 +40,11 @@ public:
     void clear();
     QVariantMap collect() const;
 
+    // Reloads every FK ComboBox from the database, preserving the current
+    // selection. Used after a connection is restored or another screen creates
+    // reference rows (Req 10.2–10.4).
+    void reloadReferences();
+
     QString state() const;
     void setState(const QString &state);
 
@@ -59,7 +64,6 @@ private:
     void populateRefValues();
     void selectComboValue(Field &field, const QVariant &value);
     void setWarning(const QString &message);
-
     const TableSpec &m_spec;
     TableGateway &m_gateway;
     const AuthSession &m_session;

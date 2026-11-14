@@ -18,6 +18,7 @@
 
 #include "core/crud/validator.h"
 #include "core/db/database.h"
+#include "core/errors/error_handler.h"
 #include "ui/register_form.h"
 
 namespace {
@@ -204,6 +205,12 @@ void MasterDetailWidget::refresh()
     m_rowsLoaded = false;
 
     if (m_parentKey.isValid()) {
+        // Keep the contextual hint visible while rows load; replace it only with
+        // a safe load error below.
+        m_hintLabel->setText(isRolePermissions()
+                                 ? tr("Permissions assigned to the selected role.")
+                                 : tr("Rows linked to the selected record."));
+
         loadReferenceLabels();
 
         // Only the rows belonging to the selected parent, in every state.
@@ -250,7 +257,41 @@ void MasterDetailWidget::refresh()
 
     m_form->clear();
     m_form->setMode(RegisterForm::Mode::ReadOnly);
+    m_form->reloadReferences();
     updateCommandState();
+}
+
+void MasterDetailWidget::refreshAfterReconnect()
+{
+    if (!m_database.isAlive())
+        return;
+
+    if (m_operation != Operation::Idle) {
+        m_form->reloadReferences();
+        updateCommandState();
+        return;
+    }
+
+    refresh();
+}
+
+bool MasterDetailWidget::hasPendingEdit() const
+{
+    return m_operation != Operation::Idle;
+}
+
+bool MasterDetailWidget::ensureDatabaseAvailable()
+{
+    if (m_database.isAlive())
+        return true;
+
+    if (m_database.ensureAvailable() && m_database.isAlive()) {
+        m_form->reloadReferences();
+        return true;
+    }
+
+    m_hintLabel->setText(ErrorHandler::defaultMessage(ErrorHandler::Category::Connection));
+    return false;
 }
 
 void MasterDetailWidget::onSelectionChanged()
@@ -333,7 +374,11 @@ void MasterDetailWidget::startEdit()
 void MasterDetailWidget::removeRow()
 {
     if (m_operation != Operation::Idle || m_selectedRow < 0
-        || !m_parentKey.isValid() || !allowed(PermissionAction::Change))
+        || !m_parentKey.isValid())
+        return;
+    if (!ensureDatabaseAvailable())
+        return;
+    if (!allowed(PermissionAction::Change))
         return;
 
     if (m_child.hasState) {
@@ -363,8 +408,11 @@ void MasterDetailWidget::removeRow()
 
 void MasterDetailWidget::applyState(const QString &newState)
 {
-    if (m_operation != Operation::Idle || m_selectedRow < 0 || !m_child.hasState
-        || !allowed(PermissionAction::Change))
+    if (m_operation != Operation::Idle || m_selectedRow < 0 || !m_child.hasState)
+        return;
+    if (!ensureDatabaseAvailable())
+        return;
+    if (!allowed(PermissionAction::Change))
         return;
 
     const DbResult result = m_gateway.setChildState(
@@ -378,9 +426,12 @@ void MasterDetailWidget::applyState(const QString &newState)
 
 void MasterDetailWidget::save()
 {
-    if (!m_parentKey.isValid()
-        || !allowed(m_operation == Operation::Adding ? PermissionAction::Add
-                                                     : PermissionAction::Change))
+    if (!m_parentKey.isValid())
+        return;
+    if (!ensureDatabaseAvailable())
+        return;
+    if (!allowed(m_operation == Operation::Adding ? PermissionAction::Add
+                                                  : PermissionAction::Change))
         return;
 
     if (m_operation == Operation::Idle) {
@@ -449,7 +500,7 @@ void MasterDetailWidget::cancel()
 
 bool MasterDetailWidget::allowed(PermissionAction action) const
 {
-    if (!m_session.isValid() || !m_database.isConnected())
+    if (!m_session.isValid() || !m_database.isAlive())
         return false;
 
     const QString appLabel = QString::fromLatin1(m_child.appLabel);

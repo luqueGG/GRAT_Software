@@ -13,6 +13,8 @@
 #include <QTimer>
 #include <QTreeWidget>
 
+#include <utility>
+
 #include "core/crud/table_spec.h"
 #include "core/auth/permission_checker.h"
 #include "core/db/database.h"
@@ -65,8 +67,10 @@ MainWindow::MainWindow(Database &database, const AuthSession &session, QWidget *
 
     // Observe database health: the Database signal covers lifecycle changes and
     // the timer catches loss/restoration of the live connection (Req 8.3–8.4).
+    // The queued signal avoids refreshing cached pages re-entrantly while a page
+    // is in the middle of an operator command.
     connect(&m_database, &Database::connectionChanged,
-            this, &MainWindow::refreshConnectionState);
+            this, &MainWindow::refreshConnectionState, Qt::QueuedConnection);
     m_connectionTimer = new QTimer(this);
     m_connectionTimer->setInterval(3000);
     connect(m_connectionTimer, &QTimer::timeout,
@@ -228,9 +232,11 @@ void MainWindow::updateStatusBar()
     if (m_connected) {
         m_dbStatusLabel->setText(tr("● DB connected"));
         m_dbStatusLabel->setStyleSheet(QStringLiteral("color: #1b7f3a;"));
+        m_dbStatusLabel->setToolTip(QString());
     } else {
-        m_dbStatusLabel->setText(tr("● DB unavailable"));
+        m_dbStatusLabel->setText(tr("● DB unavailable — maintenance disabled"));
         m_dbStatusLabel->setStyleSheet(QStringLiteral("color: #b00020;"));
+        m_dbStatusLabel->setToolTip(m_database.lastError());
     }
 
     m_userLabel->setText(tr("User: %1").arg(m_session.username));
@@ -243,7 +249,10 @@ void MainWindow::updateStatusBar()
 void MainWindow::refreshConnectionState()
 {
     const bool wasConnected = m_connected;
-    m_connected = m_database.isAlive();
+
+    // A real probe plus a safe recovery attempt: reopening only ever targets the
+    // original file and never creates a replacement database.
+    m_connected = m_database.ensureAvailable();
 
     updateStatusBar();
     setMaintenanceEnabled(m_connected);
@@ -252,6 +261,13 @@ void MainWindow::refreshConnectionState()
         statusBar()->showMessage(
             tr("Database connection lost. Maintenance actions are disabled."));
     } else if (!wasConnected && m_connected) {
+        // Reload cached pages so FK ComboBoxes and grids reflect the live data.
+        for (QWidget *page : std::as_const(m_pages)) {
+            if (auto *crud = qobject_cast<CrudWidget *>(page))
+                crud->refreshAfterReconnect();
+            else if (auto *roles = qobject_cast<AdminRolesWidget *>(page))
+                roles->refreshAfterReconnect();
+        }
         statusBar()->showMessage(tr("Database connection restored."), 5000);
     }
 }

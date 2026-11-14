@@ -60,14 +60,7 @@ RegisterForm::RegisterForm(const TableSpec &spec, TableGateway &gateway,
 
     // created_by_id is operator-invisible metadata: show the authenticated user
     // and never let it be edited (Task 10).
-    populateRefValues();
-
-    for (Field &field : m_fields) {
-        if (!field.combo)
-            continue;
-        if (QString::fromLatin1(field.column->dbColumn) == QLatin1String("created_by_id"))
-            selectComboValue(field, m_session.userId);
-    }
+    reloadReferences();
 
     setState(QStringLiteral("A"));
     setMode(Mode::ReadOnly);
@@ -198,7 +191,8 @@ void RegisterForm::applyMode()
 
 void RegisterForm::populateRefValues()
 {
-    bool anyFailure = false;
+    QStringList loadFailures;
+    QStringList emptyLists;
 
     for (Field &field : m_fields) {
         if (!field.combo)
@@ -207,11 +201,15 @@ void RegisterForm::populateRefValues()
         field.combo->clear();
         field.combo->addItem(tr("— Select —"), QVariant());
 
+        const QString label = field.column->label
+            ? QString::fromLatin1(field.column->label)
+            : QString::fromLatin1(field.column->dbColumn);
+
         if (!field.column->refTable || !field.column->refPk) {
             field.referenceLoaded = false;
             field.combo->setEnabled(false);
             field.combo->setToolTip(tr("No reference table is configured for this field."));
-            anyFailure = true;
+            loadFailures << label;
             continue;
         }
 
@@ -221,15 +219,24 @@ void RegisterForm::populateRefValues()
             ? QString::fromLatin1(field.column->refDisplay)
             : QString();
 
-        const QList<RefValue> values = m_gateway.loadRefValues(refTable, refPk, refDisplay);
-        if (values.isEmpty()) {
+        QString error;
+        const QList<RefValue> values = m_gateway.loadRefValues(refTable, refPk, refDisplay,
+                                                              &error);
+        if (!error.isEmpty()) {
             // Req 10.4: warn and disable the ComboBox when the referenced table
-            // cannot be loaded (or has no selectable rows).
+            // cannot be loaded.
             field.referenceLoaded = false;
             field.combo->setEnabled(false);
-            field.combo->setToolTip(
-                tr("The referenced list could not be loaded or is empty."));
-            anyFailure = true;
+            field.combo->setToolTip(tr("The related list could not be loaded."));
+            loadFailures << label;
+            continue;
+        }
+        if (values.isEmpty()) {
+            // A valid but empty reference table offers no selectable value.
+            field.referenceLoaded = false;
+            field.combo->setEnabled(false);
+            field.combo->setToolTip(tr("No selectable records are available for this field."));
+            emptyLists << label;
             continue;
         }
 
@@ -239,12 +246,45 @@ void RegisterForm::populateRefValues()
         field.combo->setToolTip(QString());
     }
 
-    if (anyFailure) {
-        setWarning(tr("Some reference lists could not be loaded or are empty. "
-                      "The related fields have been disabled."));
-    } else {
-        setWarning(QString());
+    QStringList warnings;
+    if (!loadFailures.isEmpty()) {
+        warnings << tr("The related lists for %1 could not be loaded.")
+                        .arg(loadFailures.join(QStringLiteral(", ")));
     }
+    if (!emptyLists.isEmpty()) {
+        warnings << tr("No selectable records are available for %1.")
+                        .arg(emptyLists.join(QStringLiteral(", ")));
+    }
+    if (!warnings.isEmpty())
+        warnings << tr("The affected fields have been disabled.");
+    setWarning(warnings.join(QLatin1Char(' ')));
+}
+
+void RegisterForm::reloadReferences()
+{
+    // Preserve what the operator currently sees. Reloading must not silently
+    // replace the selected record when a connection is restored (Req 10.3).
+    QHash<QString, QVariant> selections;
+    for (const Field &field : m_fields) {
+        if (field.combo)
+            selections.insert(QString::fromLatin1(field.column->dbColumn),
+                              field.combo->currentData());
+    }
+
+    populateRefValues();
+
+    for (Field &field : m_fields) {
+        if (!field.combo)
+            continue;
+
+        const QString columnName = QString::fromLatin1(field.column->dbColumn);
+        QVariant value = selections.value(columnName);
+        if (columnName == QLatin1String("created_by_id") && !value.isValid())
+            value = m_session.userId;
+        selectComboValue(field, value);
+    }
+
+    applyMode();
 }
 
 void RegisterForm::selectComboValue(Field &field, const QVariant &value)
