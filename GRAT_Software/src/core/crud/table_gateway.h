@@ -12,6 +12,7 @@
 #include <QVariantMap>
 
 #include "core/crud/table_spec.h"
+#include "core/errors/error_handler.h"
 
 struct AuthSession;
 
@@ -21,6 +22,7 @@ struct DbResult
     bool success = false;
     QString error;   // user-facing message (no internal details — Req 9.2)
     QVariant pk;     // resulting PK on insert (identity → lastInsertId, natural → provided)
+    ErrorHandler::Category category = ErrorHandler::Category::Unexpected;
 };
 
 // A selectable FK reference value for ComboBox population (Req 10).
@@ -44,9 +46,12 @@ public:
     // Rows of one saved parent, including every lifecycle state, ordered by id.
     QList<QVariantMap> selectChildren(const ChildTableSpec &child, const QVariant &parentKey,
                                      QString *errorMessage = nullptr) const;
-    // All {pk, label} pairs of a referenced table (all states — Req 10.2) for ComboBoxes.
+    // All {pk, label} pairs of a referenced table (all states — Req 10.2) for
+    // ComboBoxes. When the list cannot be loaded, errorMessage receives a safe
+    // Reference/Connection message and the caller keeps the ComboBox disabled.
     QList<RefValue> loadRefValues(const QString &refTable, const QString &refPk,
-                                   const QString &refDisplay) const;
+                                   const QString &refDisplay,
+                                   QString *errorMessage = nullptr) const;
     // True if a row with the given PK exists (duplicate-PK validation — Req 7.2).
     bool exists(const TableSpec &spec, const QVariant &pk) const;
     // A constituent may occur only once per waste, including inactive/deleted rows.

@@ -12,14 +12,47 @@
 #include <QDialog>
 #include <QMessageBox>
 
+#include <exception>
+
 #include "core/auth/auth_service.h"
 #include "core/db/database.h"
+#include "core/errors/error_handler.h"
 #include "ui/login_dialog.h"
 #include "ui/main_window.h"
 
+namespace {
+
+// Last-resort central guard for unexpected exceptions raised from a UI event.
+// The error is logged with its technical text and the operator sees a safe
+// message; the event loop keeps running (Req 9.1, 9.4).
+class GuardedApplication : public QApplication
+{
+public:
+    using QApplication::QApplication;
+
+    bool notify(QObject *receiver, QEvent *event) override
+    {
+        try {
+            return QApplication::notify(receiver, event);
+        } catch (const std::exception &error) {
+            const ErrorHandler::Failure failure =
+                ErrorHandler::exceptionFailure(error, QStringLiteral("UI event"));
+            QMessageBox::critical(nullptr, QStringLiteral("GRAT_Software"), failure.message);
+            return false;
+        } catch (...) {
+            const ErrorHandler::Failure failure =
+                ErrorHandler::unknownExceptionFailure(QStringLiteral("UI event"));
+            QMessageBox::critical(nullptr, QStringLiteral("GRAT_Software"), failure.message);
+            return false;
+        }
+    }
+};
+
+} // namespace
+
 int main(int argc, char *argv[])
 {
-    QApplication app(argc, argv);
+    GuardedApplication app(argc, argv);
     app.setApplicationName("GRAT_Software");
     app.setOrganizationName("GRAT");
 

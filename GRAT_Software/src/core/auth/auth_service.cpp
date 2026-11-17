@@ -2,8 +2,11 @@
 
 #include <QCryptographicHash>
 #include <QDateTime>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QUuid>
+
+#include "core/errors/error_handler.h"
 
 namespace {
 
@@ -53,6 +56,8 @@ std::optional<AuthSession> AuthService::login(const QString &username, const QSt
         "FROM user_user WHERE username = ? AND is_active = 'A' LIMIT 1"));
     query.addBindValue(trimmedUsername);
     if (!query.exec()) {
+        ErrorHandler::sqlFailure(query.lastError(), ErrorHandler::Category::Persistence,
+                                 QStringLiteral("authenticate user"));
         setError(errorMessage, databaseUnavailable());
         return std::nullopt;
     }
@@ -87,7 +92,10 @@ std::optional<AuthSession> AuthService::login(const QString &username, const QSt
     update.prepare(QStringLiteral("UPDATE user_user SET last_login = ? WHERE id = ?"));
     update.addBindValue(QDateTime::currentDateTimeUtc().toString(Qt::ISODate));
     update.addBindValue(userId);
-    update.exec();
+    if (!update.exec()) {
+        ErrorHandler::sqlFailure(update.lastError(), ErrorHandler::Category::Persistence,
+                                 QStringLiteral("update last login"));
+    }
 
     return session;
 }
@@ -103,6 +111,8 @@ bool AuthService::ensureDefaultUsers(QString *errorMessage) const
 
     QSqlQuery count(m_db);
     if (!count.exec(QStringLiteral("SELECT COUNT(*) FROM user_user")) || !count.next()) {
+        ErrorHandler::sqlFailure(count.lastError(), ErrorHandler::Category::Persistence,
+                                 QStringLiteral("verify default accounts"));
         setError(errorMessage, QStringLiteral("The default accounts could not be verified."));
         return false;
     }
@@ -129,6 +139,12 @@ bool AuthService::ensureDefaultUsers(QString *errorMessage) const
     };
 
     const bool useTransaction = m_db.transaction();
+    if (!useTransaction) {
+        ErrorHandler::sqlFailure(m_db.lastError(), ErrorHandler::Category::Persistence,
+                                 QStringLiteral("start default accounts transaction"));
+        setError(errorMessage, QStringLiteral("The default accounts could not be created."));
+        return false;
+    }
 
     for (const SeedUser &seed : seeds) {
         QSqlQuery insert(m_db);
@@ -144,6 +160,8 @@ bool AuthService::ensureDefaultUsers(QString *errorMessage) const
         insert.addBindValue(QString::fromUtf8(seed.email));
         insert.addBindValue(seed.isStaff ? 1 : 0);
         if (!insert.exec()) {
+            ErrorHandler::sqlFailure(insert.lastError(), ErrorHandler::Category::Persistence,
+                                     QStringLiteral("create default account"));
             if (useTransaction)
                 m_db.rollback();
             setError(errorMessage, QStringLiteral("The default accounts could not be created."));
@@ -152,6 +170,10 @@ bool AuthService::ensureDefaultUsers(QString *errorMessage) const
 
         const qint64 userId = insert.lastInsertId().toLongLong();
         if (userId <= 0) {
+            ErrorHandler::failure(ErrorHandler::Category::Persistence,
+                                  QStringLiteral("create default account"),
+                                  QStringLiteral("Missing identity value after insert."),
+                                  QStringLiteral("The default accounts could not be created."));
             if (useTransaction)
                 m_db.rollback();
             setError(errorMessage, QStringLiteral("The default accounts could not be created."));
@@ -165,6 +187,8 @@ bool AuthService::ensureDefaultUsers(QString *errorMessage) const
         assignRole.addBindValue(userId);
         assignRole.addBindValue(QString::fromUtf8(seed.role));
         if (!assignRole.exec()) {
+            ErrorHandler::sqlFailure(assignRole.lastError(), ErrorHandler::Category::Persistence,
+                                     QStringLiteral("assign default account role"));
             if (useTransaction)
                 m_db.rollback();
             setError(errorMessage, QStringLiteral("The default accounts could not be created."));
@@ -173,6 +197,9 @@ bool AuthService::ensureDefaultUsers(QString *errorMessage) const
     }
 
     if (useTransaction && !m_db.commit()) {
+        ErrorHandler::sqlFailure(m_db.lastError(), ErrorHandler::Category::Persistence,
+                                 QStringLiteral("commit default accounts"));
+        m_db.rollback();
         setError(errorMessage, QStringLiteral("The default accounts could not be created."));
         return false;
     }
@@ -187,8 +214,11 @@ void AuthService::loadRoles(AuthSession &session) const
         "JOIN user_user_groups ug ON ug.group_id = g.id "
         "WHERE ug.user_id = ? ORDER BY g.name"));
     query.addBindValue(session.userId);
-    if (!query.exec())
+    if (!query.exec()) {
+        ErrorHandler::sqlFailure(query.lastError(), ErrorHandler::Category::Persistence,
+                                 QStringLiteral("load user roles"));
         return; // leave roles empty; permissions still gate the UI
+    }
 
     while (query.next())
         session.roles.append(query.value(0).toString());
@@ -210,8 +240,11 @@ void AuthService::loadPermissions(AuthSession &session) const
         "WHERE up.user_id = ?"));
     query.addBindValue(session.userId);
     query.addBindValue(session.userId);
-    if (!query.exec())
+    if (!query.exec()) {
+        ErrorHandler::sqlFailure(query.lastError(), ErrorHandler::Category::Persistence,
+                                 QStringLiteral("load user permissions"));
         return; // an empty set simply grants no CRUD access
+    }
 
     while (query.next())
         session.permissions.insert(query.value(0).toString());

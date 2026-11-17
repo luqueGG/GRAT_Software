@@ -18,6 +18,7 @@
 
 class Database;
 class MasterDetailWidget;
+class QLabel;
 class QPushButton;
 class QStandardItemModel;
 class QTableView;
@@ -34,6 +35,10 @@ public:
                         QWidget *parent = nullptr);
 
     void refreshGrid();
+
+    // Re-verifies the database, reloads FK lists and refreshes the grid after a
+    // connection recovery (Req 8.4, Req 10.4).
+    void refreshAfterReconnect();
 
 private slots:
     void onGridSelectionChanged();
@@ -58,6 +63,9 @@ private:
     void cancelOperation();
     void updateCommandState();
     void updateDetails();
+    bool ensureDatabaseAvailable();
+    void showError(const QString &message);
+    void clearError();
 
     Database &m_database;
     const TableSpec &m_spec;
@@ -66,6 +74,7 @@ private:
     TableGateway m_gateway;
 
     RegisterForm *m_form = nullptr;
+    QLabel *m_errorLabel = nullptr;
     QTableView *m_grid = nullptr;
     QStandardItemModel *m_gridModel = nullptr;
     QList<int> m_gridColumns;

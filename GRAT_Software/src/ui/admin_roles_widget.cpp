@@ -10,6 +10,7 @@
 
 #include "core/auth/permission_checker.h"
 #include "core/db/database.h"
+#include "core/errors/error_handler.h"
 #include "ui/master_detail_widget.h"
 
 AdminRolesWidget::AdminRolesWidget(Database &database, const AuthSession &session, QWidget *parent)
@@ -37,6 +38,13 @@ AdminRolesWidget::AdminRolesWidget(Database &database, const AuthSession &sessio
     hint->setWordWrap(true);
     layout->addWidget(hint);
 
+    m_errorLabel = new QLabel(this);
+    m_errorLabel->setObjectName(QStringLiteral("rolesErrorLabel"));
+    m_errorLabel->setWordWrap(true);
+    m_errorLabel->setStyleSheet(QStringLiteral("color: #b00020; font-weight: 600;"));
+    m_errorLabel->hide();
+    layout->addWidget(m_errorLabel);
+
     auto *splitter = new QSplitter(Qt::Vertical, this);
     m_rolesGrid = new QTableView(splitter);
     m_rolesGrid->setObjectName(QStringLiteral("rolesGrid"));
@@ -51,20 +59,7 @@ AdminRolesWidget::AdminRolesWidget(Database &database, const AuthSession &sessio
     m_rolesGrid->horizontalHeader()->setStretchLastSection(true);
 
     const TableSpec &spec = *findTableSpec(QStringLiteral("auth_group"));
-    QString roleError;
-    const auto roles = m_gateway.selectAll(spec, &roleError);
-    if (!roleError.isEmpty()) {
-        layout->addWidget(new QLabel(roleError, this));
-        m_rolesGrid->setEnabled(false);
-    }
-    for (const QVariantMap &role : roles) {
-        auto *id = new QStandardItem(role.value(QStringLiteral("id")).toString());
-        id->setData(role.value(QStringLiteral("id")), Qt::UserRole);
-        auto *name = new QStandardItem(role.value(QStringLiteral("name")).toString());
-        id->setEditable(false);
-        name->setEditable(false);
-        m_rolesModel->appendRow({id, name});
-    }
+    loadRoles();
 
     m_detail = new MasterDetailWidget(database, spec.children.front(), m_session, splitter);
 
@@ -100,6 +95,67 @@ AdminRolesWidget::AdminRolesWidget(Database &database, const AuthSession &sessio
     refreshCatalog();
 }
 
+void AdminRolesWidget::loadRoles()
+{
+    if (!PermissionChecker::canManageRoles(m_session) || !m_rolesGrid)
+        return;
+
+    QVariant selectedKey;
+    if (m_detail)
+        selectedKey = m_detail->parentKey();
+    if (!selectedKey.isValid() && m_rolesGrid->selectionModel()) {
+        const QModelIndexList selected = m_rolesGrid->selectionModel()->selectedRows();
+        if (!selected.isEmpty())
+            selectedKey = selected.first().data(Qt::UserRole);
+    }
+
+    m_rolesModel->removeRows(0, m_rolesModel->rowCount());
+
+    const TableSpec *spec = findTableSpec(QStringLiteral("auth_group"));
+    if (!spec)
+        return;
+
+    QString roleError;
+    const auto roles = m_gateway.selectAll(*spec, &roleError);
+    m_rolesGrid->setEnabled(roleError.isEmpty());
+    if (!roleError.isEmpty()) {
+        m_errorLabel->setText(roleError);
+        m_errorLabel->show();
+    } else {
+        m_errorLabel->clear();
+        m_errorLabel->hide();
+    }
+
+    int rowToSelect = -1;
+    for (const QVariantMap &role : roles) {
+        const QVariant roleId = role.value(QStringLiteral("id"));
+        auto *id = new QStandardItem(roleId.toString());
+        id->setData(roleId, Qt::UserRole);
+        auto *name = new QStandardItem(role.value(QStringLiteral("name")).toString());
+        id->setEditable(false);
+        name->setEditable(false);
+        m_rolesModel->appendRow({id, name});
+        if (selectedKey.isValid() && roleId.toString() == selectedKey.toString())
+            rowToSelect = m_rolesModel->rowCount() - 1;
+    }
+
+    if (rowToSelect >= 0)
+        m_rolesGrid->selectRow(rowToSelect);
+    else if (m_detail)
+        m_detail->setParentKey(QVariant());
+}
+
+void AdminRolesWidget::refreshAfterReconnect()
+{
+    if (!PermissionChecker::canManageRoles(m_session))
+        return;
+
+    loadRoles();
+    refreshCatalog();
+    if (m_detail)
+        m_detail->refreshAfterReconnect();
+}
+
 void AdminRolesWidget::selectRole()
 {
     if (!PermissionChecker::canManageRoles(m_session))
@@ -113,7 +169,7 @@ void AdminRolesWidget::selectRole()
 
 void AdminRolesWidget::refreshCatalog()
 {
-    if (!PermissionChecker::canManageRoles(m_session))
+    if (!PermissionChecker::canManageRoles(m_session) || !m_catalogModel || !m_detail)
         return;
 
     m_catalogModel->removeRows(0, m_catalogModel->rowCount());

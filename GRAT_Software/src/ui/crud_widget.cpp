@@ -26,6 +26,7 @@
 #include "core/auth/permission_checker.h"
 #include "core/crud/validator.h"
 #include "core/db/database.h"
+#include "core/errors/error_handler.h"
 #include "ui/master_detail_widget.h"
 #include "ui/register_form.h"
 
@@ -50,6 +51,13 @@ CrudWidget::CrudWidget(Database &database, const TableSpec &spec,
     headingFont.setBold(true);
     heading->setFont(headingFont);
     mainLayout->addWidget(heading);
+
+    m_errorLabel = new QLabel(this);
+    m_errorLabel->setObjectName(QStringLiteral("operationErrorLabel"));
+    m_errorLabel->setWordWrap(true);
+    m_errorLabel->setStyleSheet(QStringLiteral("color: #b00020; font-weight: 600;"));
+    m_errorLabel->hide();
+    mainLayout->addWidget(m_errorLabel);
 
     auto *splitter = new QSplitter(Qt::Vertical, this);
 
@@ -156,7 +164,12 @@ void CrudWidget::refreshGrid()
     m_gridModel->setColumnCount(headers.size());
     m_gridModel->setHorizontalHeaderLabels(headers);
 
-    m_records = m_gateway.selectAll(m_spec);
+    QString loadError;
+    m_records = m_gateway.selectAll(m_spec, &loadError);
+    if (loadError.isEmpty())
+        clearError();
+    else
+        showError(loadError);
 
     for (const QVariantMap &record : m_records) {
         const QString recordState = record.value(QStringLiteral("is_active")).toString();
@@ -200,7 +213,68 @@ void CrudWidget::refreshGrid()
     // Refreshing always starts from a clean, read-only form (Req 2.5/5.3).
     m_form->clear();
     m_form->setMode(RegisterForm::Mode::ReadOnly);
+    m_form->reloadReferences();
     updateCommandState();
+}
+
+void CrudWidget::refreshAfterReconnect()
+{
+    if (!m_database.isAlive())
+        return;
+
+    clearError();
+
+    bool childPending = false;
+    for (MasterDetailWidget *detail : m_details) {
+        if (detail->hasPendingEdit()) {
+            childPending = true;
+            break;
+        }
+    }
+
+    if (m_operation != Operation::Idle || childPending) {
+        // Never discard an operator's unsaved form because the timer noticed the
+        // recovery; update the reference lists and command state in place.
+        m_form->reloadReferences();
+        for (MasterDetailWidget *detail : m_details) {
+            if (detail->hasPendingEdit())
+                detail->refreshAfterReconnect();
+        }
+        updateCommandState();
+        return;
+    }
+    refreshGrid();
+}
+
+bool CrudWidget::ensureDatabaseAvailable()
+{
+    if (m_database.isAlive())
+        return true;
+
+    if (m_database.ensureAvailable() && m_database.isAlive()) {
+        clearError();
+        m_form->reloadReferences();
+        return true;
+    }
+
+    showError(ErrorHandler::defaultMessage(ErrorHandler::Category::Connection));
+    return false;
+}
+
+void CrudWidget::showError(const QString &message)
+{
+    if (!m_errorLabel)
+        return;
+    m_errorLabel->setText(message);
+    m_errorLabel->show();
+}
+
+void CrudWidget::clearError()
+{
+    if (!m_errorLabel)
+        return;
+    m_errorLabel->clear();
+    m_errorLabel->hide();
 }
 
 void CrudWidget::onGridSelectionChanged()
@@ -267,6 +341,8 @@ void CrudWidget::startAdd()
 {
     if (m_operation != Operation::Idle)
         return;
+    if (!ensureDatabaseAvailable())
+        return;
 
     m_operation = Operation::Adding;
     m_selectedRow = -1;
@@ -281,6 +357,8 @@ void CrudWidget::startAdd()
 void CrudWidget::startModify()
 {
     if (m_operation != Operation::Idle)
+        return;
+    if (!ensureDatabaseAvailable())
         return;
 
     if (m_selectedRow < 0) {
@@ -298,6 +376,8 @@ void CrudWidget::startModify()
 void CrudWidget::applyState(const QString &newState)
 {
     if (m_operation != Operation::Idle)
+        return;
+    if (!ensureDatabaseAvailable())
         return;
 
     if (m_selectedRow < 0) {
@@ -325,6 +405,9 @@ void CrudWidget::updateRecord()
                                     "Choose Add or Modify first."));
         return;
     }
+
+    if (!ensureDatabaseAvailable())
+        return;
 
     const bool isInsert = m_operation == Operation::Adding;
     QVariantMap values = m_form->collect();
@@ -402,6 +485,7 @@ void CrudWidget::updateCommandState()
 {
     const bool idle = m_operation == Operation::Idle;
     const bool hasSelection = m_selectedRow >= 0 && m_selectedRow < m_records.size();
+    const bool dbAvailable = m_database.isAlive();
 
     const QString appLabel = QString::fromLatin1(m_spec.appLabel);
     const QString model = QString::fromLatin1(m_spec.model);
@@ -410,14 +494,14 @@ void CrudWidget::updateCommandState()
     const bool canChange = PermissionChecker::can(m_session, PermissionAction::Change,
                                                   appLabel, model);
 
-    m_addButton->setEnabled(idle && canAdd);
-    m_modifyButton->setEnabled(idle && hasSelection && canChange);
-    m_deleteButton->setEnabled(idle && hasSelection && canChange);
-    m_inactivateButton->setEnabled(idle && hasSelection && canChange);
-    m_reactivateButton->setEnabled(idle && hasSelection && canChange);
+    m_addButton->setEnabled(idle && canAdd && dbAvailable);
+    m_modifyButton->setEnabled(idle && hasSelection && canChange && dbAvailable);
+    m_deleteButton->setEnabled(idle && hasSelection && canChange && dbAvailable);
+    m_inactivateButton->setEnabled(idle && hasSelection && canChange && dbAvailable);
+    m_reactivateButton->setEnabled(idle && hasSelection && canChange && dbAvailable);
     // Update stays clickable in Idle so the operator gets the Req 5.2 message,
-    // but only when they may change the table at all.
-    m_updateButton->setEnabled(canChange);
+    // but only when they may change the table and the database is available.
+    m_updateButton->setEnabled(canChange && dbAvailable);
     m_cancelButton->setEnabled(!idle);
 
     updateDetails();

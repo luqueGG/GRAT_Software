@@ -50,6 +50,12 @@ public:
     // Reload the child rows of the current parent.
     void refresh();
 
+    // Reload FK lists and child rows after a connection recovery (Req 8.4).
+    void refreshAfterReconnect();
+
+    // True while an Add/Edit form is open, so a parent refresh can preserve it.
+    bool hasPendingEdit() const;
+
 signals:
     void permissionsChanged();
 
@@ -71,6 +77,7 @@ private:
     void cancel();
     void updateCommandState();
     bool allowed(PermissionAction action) const;
+    bool ensureDatabaseAvailable();
     bool isRolePermissions() const;
     QVariantMap currentRecord() const;
 
