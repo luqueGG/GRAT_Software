@@ -67,13 +67,13 @@ PRAGMA foreign_key_check;
 
 | Caso | Esperado | Obtenido | Estado | Evidencia |
 |---|---|---|---|---|
-| Catálogo de permisos (`auth_permission`) | 43 | 43 | ✅ | `SELECT COUNT(*)` = 43 |
-| Permisos efectivos de `admin` (Administrator) | 43 | 43 | ✅ | id=1, `is_active='A'`, grupo Administrator con 43 |
-| Permisos efectivos de `supervisor` (Supervisor) | 36 | 36 | ✅ | id=2, `is_active='A'`, grupo Supervisor con 36, sin permisos directos |
-| Permisos efectivos de `operator` (Operator) | 19 | 19 | ✅ | id=3, `is_active='A'`, grupo Operator con 19, sin permisos directos |
-| Los 3 usuarios sembrados están activos | `A` en los 3 | `A`, `A`, `A` | ✅ | `user_user.is_active` |
-| Integridad referencial | Sin violaciones | `PRAGMA foreign_key_check` vacío | ✅ | `integrity_check` = `ok` |
-| `PRAGMA foreign_keys` | ON en conexiones de la app | 0 en sesión SQL cruda; 1 tras `PRAGMA foreign_keys = ON` | ✅ | La app lo activa por conexión; SQLite lo desactiva por defecto en una conexión nueva |
+| Catálogo de permisos (`auth_permission`) | 43 | 43 | Conforme | `SELECT COUNT(*)` = 43 |
+| Permisos efectivos de `admin` (Administrator) | 43 | 43 | Conforme | id=1, `is_active='A'`, grupo Administrator con 43 |
+| Permisos efectivos de `supervisor` (Supervisor) | 36 | 36 | Conforme | id=2, `is_active='A'`, grupo Supervisor con 36, sin permisos directos |
+| Permisos efectivos de `operator` (Operator) | 19 | 19 | Conforme | id=3, `is_active='A'`, grupo Operator con 19, sin permisos directos |
+| Los 3 usuarios sembrados están activos | `A` en los 3 | `A`, `A`, `A` | Conforme | `user_user.is_active` |
+| Integridad referencial | Sin violaciones | `PRAGMA foreign_key_check` vacío | Conforme | `integrity_check` = `ok` |
+| `PRAGMA foreign_keys` | ON en conexiones de la app | 0 en sesión SQL cruda; 1 tras `PRAGMA foreign_keys = ON` | Conforme | La app lo activa por conexión; SQLite lo desactiva por defecto en una conexión nueva |
 
 ### Evidencia de ejecución
 
@@ -109,15 +109,15 @@ WSLg). Capturas en `docs/verificacion/capturas/`.
 
 | Caso | Esperado | Obtenido | Estado | Evidencia |
 |---|---|---|---|---|
-| Login correcto de `admin` + árbol de navegación y barra de estado | Acceso total, 43 permisos | Ventana `GRAT_Software — admin`; 6 módulos, incluido Admin → Roles; barra: `● DB connected`, `User: admin`, `Role(s): Administrator` | ✅ | `capturas/01-admin-nav.png` |
-| Login correcto de `supervisor` | 36 permisos, módulos permitidos | Ventana `GRAT_Software — supervisor`; 5 módulos (sin Admin), 12 tablas con User → Users; `User: supervisor`, `Role(s): Supervisor` | ✅ | `capturas/02-supervisor-nav.png` |
-| Login correcto de `operator` | 19 permisos, módulos permitidos | Ventana `GRAT_Software — operator`; 4 módulos (sin User ni Admin), 11 tablas; `User: operator`, `Role(s): Operator` | ✅ | `capturas/03-operator-botones.png` |
-| Contraseña incorrecta | Rechazo con mensaje genérico | `admin` con clave errónea: `Invalid username or password.` en rojo; el diálogo permanece abierto y se limpia el campo de contraseña | ✅ | `capturas/04-contraseñaIncorrecta.png` |
-| Usuario inexistente | Rechazo con el mismo mensaje genérico | Usuario `pepito`: mismo texto `Invalid username or password.` (no distingue de clave incorrecta) | ✅ | `capturas/05-usuario-inexistente.png` |
-| Campos vacíos | Rechazo sin consultar la BD | Usuario y contraseña vacíos: `Enter your username and password.` | ✅ | `capturas/06-campos-vacios.png` |
-| Usuario inactivo (`is_active='I'`) | Rechazo con mensaje genérico | Con `operator` en `is_active='I'`: `Invalid username or password.`, idéntico al de usuario inexistente; la BD se restauró después desde la copia de seguridad | ✅ | `capturas/07-usuario-inactivo.png` |
-| Mensajes de error sin SQL ni nombres de tablas | Sin detalles internos | Clave incorrecta, usuario inexistente, campos vacíos y usuario inactivo muestran solo mensajes genéricos: no aparecen SQL, `user_user`, hashes ni rutas de la BD | ✅ | `capturas/04-contraseñaIncorrecta.png` a `capturas/07-usuario-inactivo.png` |
-| Botones deshabilitados según el rol | Solo acciones permitidas | `operator` en Location → Countries: `Add`, `Modify`, `Delete`, `Inactivate`, `Reactivate` y `Update` deshabilitados (solo tiene `view_country`) | ✅ | `capturas/03-operator-botones.png` |
+| Login correcto de `admin` + árbol de navegación y barra de estado | Acceso total, 43 permisos | Ventana `GRAT_Software — admin`; 6 módulos, incluido Admin → Roles; barra: `DB connected`, `User: admin`, `Role(s): Administrator` | Conforme | `capturas/01-admin-nav.png` |
+| Login correcto de `supervisor` | 36 permisos, módulos permitidos | Ventana `GRAT_Software — supervisor`; 5 módulos (sin Admin), 12 tablas con User → Users; `User: supervisor`, `Role(s): Supervisor` | Conforme | `capturas/02-supervisor-nav.png` |
+| Login correcto de `operator` | 19 permisos, módulos permitidos | Ventana `GRAT_Software — operator`; 4 módulos (sin User ni Admin), 11 tablas; `User: operator`, `Role(s): Operator` | Conforme | `capturas/03-operator-botones.png` |
+| Contraseña incorrecta | Rechazo con mensaje genérico | `admin` con clave errónea: `Invalid username or password.` en rojo; el diálogo permanece abierto y se limpia el campo de contraseña | Conforme | `capturas/04-contraseñaIncorrecta.png` |
+| Usuario inexistente | Rechazo con el mismo mensaje genérico | Usuario `pepito`: mismo texto `Invalid username or password.` (no distingue de clave incorrecta) | Conforme | `capturas/05-usuario-inexistente.png` |
+| Campos vacíos | Rechazo sin consultar la BD | Usuario y contraseña vacíos: `Enter your username and password.` | Conforme | `capturas/06-campos-vacios.png` |
+| Usuario inactivo (`is_active='I'`) | Rechazo con mensaje genérico | Con `operator` en `is_active='I'`: `Invalid username or password.`, idéntico al de usuario inexistente; la BD se restauró después desde la copia de seguridad | Conforme | `capturas/07-usuario-inactivo.png` |
+| Mensajes de error sin SQL ni nombres de tablas | Sin detalles internos | Clave incorrecta, usuario inexistente, campos vacíos y usuario inactivo muestran solo mensajes genéricos: no aparecen SQL, `user_user`, hashes ni rutas de la BD | Conforme | `capturas/04-contraseñaIncorrecta.png` a `capturas/07-usuario-inactivo.png` |
+| Botones deshabilitados según el rol | Solo acciones permitidas | `operator` en Location → Countries: `Add`, `Modify`, `Delete`, `Inactivate`, `Reactivate` y `Update` deshabilitados (solo tiene `view_country`) | Conforme | `capturas/03-operator-botones.png` |
 
 ## Observaciones
 
