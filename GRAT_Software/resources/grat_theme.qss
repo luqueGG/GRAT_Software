@@ -485,6 +485,14 @@ QDialogButtonBox QPushButton {
     min-width: 88px;
 }
 
+QDialog#LoginDialog QLineEdit {
+    min-width: 210px;
+}
+
+QDialog#LoginDialog QLabel#errorLabel {
+    padding: 6px 0 0 0;
+}
+
 QToolTip {
     background: #202124;
     color: #FFFFFF;

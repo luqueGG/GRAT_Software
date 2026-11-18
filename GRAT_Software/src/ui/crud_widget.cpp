@@ -48,6 +48,7 @@ CrudWidget::CrudWidget(Database &database, const TableSpec &spec,
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
     auto *heading = new QLabel(m_title, this);
+    heading->setObjectName(QStringLiteral("sectionHeading"));
     QFont headingFont = heading->font();
     headingFont.setPointSize(18);
     headingFont.setBold(true);

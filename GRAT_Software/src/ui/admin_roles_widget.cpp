@@ -22,6 +22,7 @@ AdminRolesWidget::AdminRolesWidget(Database &database, const AuthSession &sessio
     auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     auto *heading = new QLabel(tr("Roles"), this);
+    heading->setObjectName(QStringLiteral("sectionHeading"));
     QFont font = heading->font();
     font.setPointSize(18);
     font.setBold(true);

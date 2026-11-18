@@ -237,7 +237,7 @@ void MainWindow::updateStatusBar()
 {
     if (m_connected) {
         m_dbStatusLabel->setText(tr("● DB connected"));
-        m_dbStatusLabel->setStyleSheet(QStringLiteral("color: #1b7f3a;"));
+        m_dbStatusLabel->setStyleSheet(QStringLiteral("color: #176B45; font-weight: 600;"));
         m_dbStatusLabel->setToolTip(QString());
     } else {
         m_dbStatusLabel->setText(tr("● DB unavailable — maintenance disabled"));
