@@ -19,7 +19,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 # --- Qt6 dependencies ---
-find_package(Qt6 6 COMPONENTS Widgets Sql REQUIRED)
+find_package(Qt6 6 COMPONENTS Widgets Sql Svg REQUIRED)
 
 # --- Application target ---
 add_executable(grat_software
@@ -39,7 +39,10 @@ add_executable(grat_software
     src/ui/crud_widget.cpp
     src/ui/master_detail_widget.cpp
     src/ui/admin_roles_widget.cpp
+    src/ui/visual_icons.cpp
+    src/ui/visual_text.cpp
     resources/grat_schema.qrc
+    resources/grat_resources.qrc
 )
 
 target_include_directories(grat_software PRIVATE src)
@@ -47,6 +50,7 @@ target_include_directories(grat_software PRIVATE src)
 target_link_libraries(grat_software PRIVATE
     Qt6::Widgets
     Qt6::Sql
+    Qt6::Svg
 )
 
 # Install defaults (optional, harmless if unused)

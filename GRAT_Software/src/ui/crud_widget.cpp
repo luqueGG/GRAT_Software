@@ -14,6 +14,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QSize>
 #include <QSplitter>
 #include <QStandardItem>
 #include <QStandardItemModel>
@@ -29,6 +30,7 @@
 #include "core/errors/error_handler.h"
 #include "ui/master_detail_widget.h"
 #include "ui/register_form.h"
+#include "ui/visual_icons.h"
 
 CrudWidget::CrudWidget(Database &database, const TableSpec &spec,
                        const AuthSession &session, const QString &title,
@@ -46,6 +48,7 @@ CrudWidget::CrudWidget(Database &database, const TableSpec &spec,
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
     auto *heading = new QLabel(m_title, this);
+    heading->setObjectName(QStringLiteral("sectionHeading"));
     QFont headingFont = heading->font();
     headingFont.setPointSize(18);
     headingFont.setBold(true);
@@ -88,18 +91,20 @@ CrudWidget::CrudWidget(Database &database, const TableSpec &spec,
     lowerLayout->addWidget(formScroll, 1);
 
     auto *buttonLayout = new QHBoxLayout();
-    auto makeButton = [this](const QString &text, const QString &name) {
+    auto makeButton = [this](const QString &text, const QString &name, const QString &iconKey) {
         auto *button = new QPushButton(text, this);
         button->setObjectName(name);
+        button->setIcon(VisualIcons::icon(iconKey));
+        button->setIconSize(QSize(16, 16));
         return button;
     };
-    m_addButton = makeButton(tr("Add"), QStringLiteral("addButton"));
-    m_modifyButton = makeButton(tr("Modify"), QStringLiteral("modifyButton"));
-    m_deleteButton = makeButton(tr("Delete"), QStringLiteral("deleteButton"));
-    m_inactivateButton = makeButton(tr("Inactivate"), QStringLiteral("inactivateButton"));
-    m_reactivateButton = makeButton(tr("Reactivate"), QStringLiteral("reactivateButton"));
-    m_updateButton = makeButton(tr("Update"), QStringLiteral("updateButton"));
-    m_cancelButton = makeButton(tr("Cancel"), QStringLiteral("cancelButton"));
+    m_addButton = makeButton(tr("Agregar"), QStringLiteral("addButton"), QStringLiteral("add_light"));
+    m_modifyButton = makeButton(tr("Modificar"), QStringLiteral("modifyButton"), QStringLiteral("edit_light"));
+    m_deleteButton = makeButton(tr("Eliminar"), QStringLiteral("deleteButton"), QStringLiteral("delete"));
+    m_inactivateButton = makeButton(tr("Desactivar"), QStringLiteral("inactivateButton"), QStringLiteral("state"));
+    m_reactivateButton = makeButton(tr("Reactivar"), QStringLiteral("reactivateButton"), QStringLiteral("state"));
+    m_updateButton = makeButton(tr("Actualizar"), QStringLiteral("updateButton"), QStringLiteral("refresh_light"));
+    m_cancelButton = makeButton(tr("Cancelar"), QStringLiteral("cancelButton"), QStringLiteral("cancel"));
 
     connect(m_addButton, &QPushButton::clicked, this, &CrudWidget::startAdd);
     connect(m_modifyButton, &QPushButton::clicked, this, &CrudWidget::startModify);
@@ -362,8 +367,8 @@ void CrudWidget::startModify()
         return;
 
     if (m_selectedRow < 0) {
-        QMessageBox::information(this, tr("Modify Record"),
-                                 tr("Select a record in the grid first."));
+        QMessageBox::information(this, tr("Modificar registro"),
+                                 tr("Seleccione primero un registro en la tabla."));
         return;
     }
 
@@ -381,14 +386,14 @@ void CrudWidget::applyState(const QString &newState)
         return;
 
     if (m_selectedRow < 0) {
-        QMessageBox::information(this, tr("State Change"),
-                                 tr("Select a record in the grid first."));
+        QMessageBox::information(this, tr("Cambio de estado"),
+                                 tr("Seleccione primero un registro en la tabla."));
         return;
     }
 
     const DbResult result = m_gateway.setState(m_spec, currentPk(), newState);
     if (!result.success) {
-        QMessageBox::critical(this, tr("Operation failed"), result.error);
+        QMessageBox::critical(this, tr("Operacion fallida"), result.error);
         return;
     }
 
@@ -400,9 +405,9 @@ void CrudWidget::updateRecord()
 {
     if (m_operation == Operation::Idle) {
         // Req 5.2: Update without a pending operation explains why nothing happens.
-        QMessageBox::information(this, tr("Update Record"),
-                                 tr("There is no pending operation to update. "
-                                    "Choose Add or Modify first."));
+        QMessageBox::information(this, tr("Actualizar registro"),
+                                 tr("No hay una operacion pendiente para actualizar. "
+                                    "Elija Agregar o Modificar primero."));
         return;
     }
 
@@ -433,9 +438,9 @@ void CrudWidget::updateRecord()
         QStringList details;
         details.reserve(errors.size());
         for (const ValidationError &error : errors)
-            details << QStringLiteral("• %1").arg(error.reason);
+            details << QStringLiteral("- %1").arg(error.reason);
         QMessageBox::warning(this, tr("Validation failed"),
-                             tr("Please correct the following fields:\n\n%1")
+                             tr("Corrija los siguientes campos:\n\n%1")
                                  .arg(details.join(QLatin1Char('\n'))));
         return;
     }
@@ -459,7 +464,7 @@ void CrudWidget::updateRecord()
         result = m_gateway.update(m_spec, currentPk(), values);
 
     if (!result.success) {
-        QMessageBox::critical(this, tr("Update failed"), result.error);
+        QMessageBox::critical(this, tr("Actualizacion fallida"), result.error);
         return;
     }
 
@@ -534,7 +539,7 @@ QString CrudWidget::displayValue(const ColumnSpec &column, const QVariant &value
     case ColumnType::State:
         return stateText(value.toString());
     case ColumnType::Boolean:
-        return value.toInt() != 0 ? tr("Yes") : tr("No");
+        return value.toInt() != 0 ? tr("Si") : tr("No");
     case ColumnType::Decimal:
         return QString::number(value.toDouble(), 'f', 2);
     case ColumnType::DateTime: {
@@ -552,10 +557,10 @@ QString CrudWidget::displayValue(const ColumnSpec &column, const QVariant &value
 QString CrudWidget::stateText(const QString &state) const
 {
     if (state == QLatin1String("A"))
-        return tr("Active");
+        return tr("Activo");
     if (state == QLatin1String("I"))
-        return tr("Inactive");
+        return tr("Inactivo");
     if (state == QLatin1String("*"))
-        return tr("Deleted");
+        return tr("Eliminado");
     return state;
 }

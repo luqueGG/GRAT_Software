@@ -16,6 +16,7 @@
 
 #include "app/session.h"
 #include "core/crud/table_gateway.h"
+#include "ui/visual_text.h"
 
 RegisterForm::RegisterForm(const TableSpec &spec, TableGateway &gateway,
                            const AuthSession &session, QWidget *parent)
@@ -42,17 +43,20 @@ RegisterForm::RegisterForm(const TableSpec &spec, TableGateway &gateway,
         field.column = &column;
 
         const QString label = QString::fromLatin1(column.label);
+        auto *labelWidget = new QLabel(label, this);
+        labelWidget->setProperty("fieldLabel", true);
+
         if (column.type == ColumnType::State) {
             auto *badge = new QLabel(this);
             badge->setObjectName(QStringLiteral("field_") + QString::fromLatin1(column.dbColumn));
             field.widget = badge;
             field.stateLabel = badge;
-            m_layout->addRow(label, badge);
+            m_layout->addRow(labelWidget, badge);
         } else {
             QWidget *input = createField(column);
             field.widget = input;
             field.combo = qobject_cast<QComboBox *>(input);
-            m_layout->addRow(label, input);
+            m_layout->addRow(labelWidget, input);
         }
 
         m_fields.append(field);
@@ -115,7 +119,7 @@ QWidget *RegisterForm::createField(const ColumnSpec &column)
         dateTimeEdit->setCalendarPopup(true);
         dateTimeEdit->setDisplayFormat(QStringLiteral("yyyy-MM-dd HH:mm:ss"));
         dateTimeEdit->setMinimumDateTime(QDateTime(QDate(1900, 1, 1), QTime(0, 0)));
-        dateTimeEdit->setSpecialValueText(tr("—"));
+        dateTimeEdit->setSpecialValueText(tr("-"));
         dateTimeEdit->setDateTime(QDateTime::currentDateTime());
         return dateTimeEdit;
     }
@@ -139,7 +143,7 @@ QComboBox *RegisterForm::createCombo(const ColumnSpec &column)
 {
     auto *combo = new QComboBox(this);
     combo->setObjectName(QStringLiteral("field_") + QString::fromLatin1(column.dbColumn));
-    combo->addItem(tr("— Select —"), QVariant());
+    combo->addItem(tr("- Seleccionar -"), QVariant());
     return combo;
 }
 
@@ -199,7 +203,7 @@ void RegisterForm::populateRefValues()
             continue;
 
         field.combo->clear();
-        field.combo->addItem(tr("— Select —"), QVariant());
+        field.combo->addItem(tr("- Seleccionar -"), QVariant());
 
         const QString label = field.column->label
             ? QString::fromLatin1(field.column->label)
@@ -208,7 +212,7 @@ void RegisterForm::populateRefValues()
         if (!field.column->refTable || !field.column->refPk) {
             field.referenceLoaded = false;
             field.combo->setEnabled(false);
-            field.combo->setToolTip(tr("No reference table is configured for this field."));
+            field.combo->setToolTip(tr("No hay una tabla de referencia configurada para este campo."));
             loadFailures << label;
             continue;
         }
@@ -227,7 +231,7 @@ void RegisterForm::populateRefValues()
             // cannot be loaded.
             field.referenceLoaded = false;
             field.combo->setEnabled(false);
-            field.combo->setToolTip(tr("The related list could not be loaded."));
+            field.combo->setToolTip(tr("No se pudo cargar la lista relacionada."));
             loadFailures << label;
             continue;
         }
@@ -235,28 +239,29 @@ void RegisterForm::populateRefValues()
             // A valid but empty reference table offers no selectable value.
             field.referenceLoaded = false;
             field.combo->setEnabled(false);
-            field.combo->setToolTip(tr("No selectable records are available for this field."));
+            field.combo->setToolTip(tr("No hay registros seleccionables disponibles para este campo."));
             emptyLists << label;
             continue;
         }
 
         field.referenceLoaded = true;
         for (const RefValue &value : values)
-            field.combo->addItem(value.text, value.pk);
+            field.combo->addItem(VisualText::referenceLabel(refTable, refDisplay, value.text),
+                                 value.pk);
         field.combo->setToolTip(QString());
     }
 
     QStringList warnings;
     if (!loadFailures.isEmpty()) {
-        warnings << tr("The related lists for %1 could not be loaded.")
+        warnings << tr("No se pudieron cargar las listas relacionadas de %1.")
                         .arg(loadFailures.join(QStringLiteral(", ")));
     }
     if (!emptyLists.isEmpty()) {
-        warnings << tr("No selectable records are available for %1.")
+        warnings << tr("No hay registros seleccionables disponibles para %1.")
                         .arg(emptyLists.join(QStringLiteral(", ")));
     }
     if (!warnings.isEmpty())
-        warnings << tr("The affected fields have been disabled.");
+        warnings << tr("Los campos afectados se han deshabilitado.");
     setWarning(warnings.join(QLatin1Char(' ')));
 }
 
@@ -439,23 +444,23 @@ void RegisterForm::setState(const QString &state)
     QString text;
     QString color;
     if (state == QLatin1String("A")) {
-        text = tr("Active");
-        color = QStringLiteral("#1b7f3a");
+        text = tr("Activo");
+        color = QStringLiteral("#176B45");
     } else if (state == QLatin1String("I")) {
-        text = tr("Inactive");
-        color = QStringLiteral("#8a6d00");
+        text = tr("Inactivo");
+        color = QStringLiteral("#A67900");
     } else if (state == QLatin1String("*")) {
-        text = tr("Deleted");
+        text = tr("Eliminado");
         color = QStringLiteral("#b00020");
     } else {
         text = state;
-        color = QStringLiteral("#555555");
+        color = QStringLiteral("#626B73");
     }
 
     for (const Field &field : m_fields) {
         if (!field.stateLabel)
             continue;
-        field.stateLabel->setText(tr("● %1").arg(text));
+        field.stateLabel->setText(tr("* %1").arg(text));
         field.stateLabel->setStyleSheet(
             QStringLiteral("color: %1; font-weight: 600;").arg(color));
     }

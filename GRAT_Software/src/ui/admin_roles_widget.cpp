@@ -12,6 +12,7 @@
 #include "core/db/database.h"
 #include "core/errors/error_handler.h"
 #include "ui/master_detail_widget.h"
+#include "ui/visual_text.h"
 
 AdminRolesWidget::AdminRolesWidget(Database &database, const AuthSession &session, QWidget *parent)
     : QWidget(parent)
@@ -22,6 +23,7 @@ AdminRolesWidget::AdminRolesWidget(Database &database, const AuthSession &sessio
     auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     auto *heading = new QLabel(tr("Roles"), this);
+    heading->setObjectName(QStringLiteral("sectionHeading"));
     QFont font = heading->font();
     font.setPointSize(18);
     font.setBold(true);
@@ -29,12 +31,12 @@ AdminRolesWidget::AdminRolesWidget(Database &database, const AuthSession &sessio
     layout->addWidget(heading);
 
     if (!PermissionChecker::canManageRoles(m_session)) {
-        layout->addWidget(new QLabel(tr("You are not authorized to manage roles."), this));
+        layout->addWidget(new QLabel(tr("No esta autorizado para gestionar roles."), this));
         return;
     }
 
-    auto *hint = new QLabel(tr("Select a role to manage its permissions. "
-                              "Changes take effect for users on their next sign-in."), this);
+    auto *hint = new QLabel(tr("Seleccione un rol para gestionar sus permisos. "
+                              "Los cambios surten efecto para los usuarios en su proximo inicio de sesion."), this);
     hint->setWordWrap(true);
     layout->addWidget(hint);
 
@@ -49,7 +51,7 @@ AdminRolesWidget::AdminRolesWidget(Database &database, const AuthSession &sessio
     m_rolesGrid = new QTableView(splitter);
     m_rolesGrid->setObjectName(QStringLiteral("rolesGrid"));
     m_rolesModel = new QStandardItemModel(this);
-    m_rolesModel->setHorizontalHeaderLabels({tr("ID"), tr("Role Name")});
+    m_rolesModel->setHorizontalHeaderLabels({tr("ID"), tr("Nombre del rol")});
     m_rolesGrid->setModel(m_rolesModel);
     m_rolesGrid->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_rolesGrid->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -74,7 +76,7 @@ AdminRolesWidget::AdminRolesWidget(Database &database, const AuthSession &sessio
     m_catalogGrid->setObjectName(QStringLiteral("permissionCatalogGrid"));
     m_catalogModel = new QStandardItemModel(this);
     m_catalogModel->setHorizontalHeaderLabels(
-        {tr("ID"), tr("Name"), tr("App Label"), tr("Model"), tr("Codename"), tr("Assignment")});
+        {tr("ID"), tr("Nombre"), tr("Etiqueta de aplicacion"), tr("Modelo"), tr("Codigo de permiso"), tr("Asignacion")});
     m_catalogGrid->setModel(m_catalogModel);
     m_catalogGrid->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_catalogGrid->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -131,7 +133,8 @@ void AdminRolesWidget::loadRoles()
         const QVariant roleId = role.value(QStringLiteral("id"));
         auto *id = new QStandardItem(roleId.toString());
         id->setData(roleId, Qt::UserRole);
-        auto *name = new QStandardItem(role.value(QStringLiteral("name")).toString());
+        auto *name = new QStandardItem(
+            VisualText::roleName(role.value(QStringLiteral("name")).toString()));
         id->setEditable(false);
         name->setEditable(false);
         m_rolesModel->appendRow({id, name});
@@ -187,20 +190,23 @@ void AdminRolesWidget::refreshCatalog()
                                  QStringLiteral("codename")};
     for (const QVariantMap &permission : permissions) {
         QList<QStandardItem *> items;
-        for (const QString &column : columns)
-            items.append(new QStandardItem(permission.value(column).toString()));
+        for (const QString &column : columns) {
+            const QString value = permission.value(column).toString();
+            items.append(new QStandardItem(column == QLatin1String("name")
+                ? VisualText::permissionName(value) : value));
+        }
         const bool assigned = permission.value(QStringLiteral("assigned")).toBool();
         assignedCount += assigned ? 1 : 0;
         items.append(new QStandardItem(roleKey.isValid()
-            ? (assigned ? tr("Assigned") : tr("Available")) : tr("Select a role")));
+            ? (assigned ? tr("Asignado") : tr("Disponible")) : tr("Seleccione un rol")));
         for (QStandardItem *item : items)
             item->setEditable(false);
         m_catalogModel->appendRow(items);
     }
     m_catalogSummary->setText(roleKey.isValid()
-        ? tr("System permissions (read-only): %1 — Assigned: %2 — Available: %3")
+        ? tr("Permisos del sistema (solo lectura): %1 - Asignados: %2 - Disponibles: %3")
               .arg(permissions.size()).arg(assignedCount).arg(permissions.size() - assignedCount)
-        : tr("System permissions (read-only): %1. Select a role to see assignments.")
+        : tr("Permisos del sistema (solo lectura): %1. Seleccione un rol para ver las asignaciones.")
               .arg(permissions.size()));
     m_catalogGrid->resizeColumnsToContents();
 }

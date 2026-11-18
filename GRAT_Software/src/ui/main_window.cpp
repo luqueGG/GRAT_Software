@@ -8,8 +8,10 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QSize>
 #include <QStackedWidget>
 #include <QStatusBar>
+#include <QStringList>
 #include <QTimer>
 #include <QTreeWidget>
 
@@ -20,6 +22,8 @@
 #include "core/db/database.h"
 #include "ui/crud_widget.h"
 #include "ui/admin_roles_widget.h"
+#include "ui/visual_icons.h"
+#include "ui/visual_text.h"
 #include "ui_main_window.h"
 
 namespace {
@@ -31,12 +35,12 @@ struct ModuleDef
 };
 
 const ModuleDef kModules[] = {
-    {"location", "Location"},
-    {"catalog", "Catalog"},
-    {"user", "User"},
-    {"waste", "Waste"},
-    {"transfer", "Transfer"},
-    {"admin", "Admin"},
+    {"location", "Ubicaciones"},
+    {"catalog", "Catalogos"},
+    {"user", "Usuarios"},
+    {"waste", "Residuos"},
+    {"transfer", "Transporte"},
+    {"admin", "Administracion"},
 };
 
 } // namespace
@@ -48,6 +52,8 @@ MainWindow::MainWindow(Database &database, const AuthSession &session, QWidget *
     , m_session(session)
 {
     m_ui->setupUi(this);
+
+    m_ui->navigationTree->setIconSize(QSize(18, 18));
 
     m_dbStatusLabel = new QLabel(this);
     m_userLabel = new QLabel(this);
@@ -78,7 +84,7 @@ MainWindow::MainWindow(Database &database, const AuthSession &session, QWidget *
     m_connectionTimer->start();
     refreshConnectionState();
 
-    setWindowTitle(QStringLiteral("GRAT_Software — %1").arg(m_session.username));
+    setWindowTitle(QStringLiteral("GRAT_Software - %1").arg(m_session.username));
 
     // Open the first permitted table so the workspace is never blank.
     if (m_ui->navigationTree->topLevelItemCount() > 0) {
@@ -92,12 +98,12 @@ MainWindow::~MainWindow() = default;
 
 void MainWindow::buildMenus()
 {
-    QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
-    QAction *exitAction = fileMenu->addAction(tr("E&xit"));
+    QMenu *fileMenu = menuBar()->addMenu(tr("&Archivo"));
+    QAction *exitAction = fileMenu->addAction(tr("S&alir"));
     exitAction->setShortcut(QKeySequence::Quit);
     connect(exitAction, &QAction::triggered, this, &QWidget::close);
 
-    QMenu *modulesMenu = menuBar()->addMenu(tr("&Modules"));
+    QMenu *modulesMenu = menuBar()->addMenu(tr("&Modulos"));
     for (const ModuleDef &module : kModules) {
         QMenu *moduleMenu = nullptr;
         for (const TableSpec &spec : allTableSpecs()) {
@@ -116,13 +122,13 @@ void MainWindow::buildMenus()
         }
     }
 
-    QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
-    QAction *aboutAction = helpMenu->addAction(tr("&About GRAT_Software"));
+    QMenu *helpMenu = menuBar()->addMenu(tr("&Ayuda"));
+    QAction *aboutAction = helpMenu->addAction(tr("&Acerca de GRAT_Software"));
     connect(aboutAction, &QAction::triggered, this, [this] {
-        QMessageBox::about(this, tr("About GRAT_Software"),
+        QMessageBox::about(this, tr("Acerca de GRAT_Software"),
                            tr("<b>GRAT_Software</b><br>"
-                              "Responsible Management of Transport Waste.<br><br>"
-                              "Signed in as <b>%1</b>.")
+                              "Gestion Responsable de Residuos de Transporte.<br><br>"
+                              "Ha iniciado sesion como <b>%1</b>.")
                                .arg(m_session.username.toHtmlEscaped()));
     });
 }
@@ -135,6 +141,7 @@ void MainWindow::buildNavigation()
     for (const ModuleDef &module : kModules) {
         auto *moduleItem = new QTreeWidgetItem(m_ui->navigationTree);
         moduleItem->setText(0, moduleTitle(QString::fromLatin1(module.key)));
+        moduleItem->setIcon(0, VisualIcons::moduleIcon(QString::fromLatin1(module.key)));
         moduleItem->setFlags(moduleItem->flags() & ~Qt::ItemIsSelectable);
         QFont moduleFont = moduleItem->font(0);
         moduleFont.setBold(true);
@@ -150,6 +157,7 @@ void MainWindow::buildNavigation()
             auto *item = new QTreeWidgetItem(moduleItem);
             const QString table = QString::fromLatin1(spec.table);
             item->setText(0, tableTitle(table));
+            item->setIcon(0, VisualIcons::moduleIcon(QString::fromLatin1(spec.module)));
             item->setData(0, Qt::UserRole, table);
             m_navigationItems.insert(table, item);
             ++visibleTables;
@@ -200,7 +208,7 @@ void MainWindow::showPage(QTreeWidgetItem *current, QTreeWidgetItem *previous)
     }
 
     m_ui->stackedWidget->setCurrentWidget(page);
-    statusBar()->showMessage(tr("%1 loaded.").arg(current->text(0)), 2500);
+    statusBar()->showMessage(tr("%1 cargado.").arg(current->text(0)), 2500);
 }
 
 QWidget *MainWindow::createPage(const TableSpec &spec)
@@ -230,20 +238,21 @@ void MainWindow::navigateToTable(const QString &table)
 void MainWindow::updateStatusBar()
 {
     if (m_connected) {
-        m_dbStatusLabel->setText(tr("● DB connected"));
-        m_dbStatusLabel->setStyleSheet(QStringLiteral("color: #1b7f3a;"));
+        m_dbStatusLabel->setText(tr("* Base de datos conectada"));
+        m_dbStatusLabel->setStyleSheet(QStringLiteral("color: #176B45; font-weight: 600;"));
         m_dbStatusLabel->setToolTip(QString());
     } else {
-        m_dbStatusLabel->setText(tr("● DB unavailable — maintenance disabled"));
+        m_dbStatusLabel->setText(tr("* Base de datos no disponible - mantenimiento deshabilitado"));
         m_dbStatusLabel->setStyleSheet(QStringLiteral("color: #b00020;"));
         m_dbStatusLabel->setToolTip(m_database.lastError());
     }
 
-    m_userLabel->setText(tr("User: %1").arg(m_session.username));
-    const QString roles = m_session.roles.isEmpty()
-        ? tr("none")
-        : m_session.roles.join(QStringLiteral(", "));
-    m_rolesLabel->setText(tr("Role(s): %1").arg(roles));
+    m_userLabel->setText(tr("Usuario: %1").arg(m_session.username));
+    const QStringList translatedRoles = VisualText::roleNames(m_session.roles);
+    const QString roles = translatedRoles.isEmpty()
+        ? tr("ninguno")
+        : translatedRoles.join(QStringLiteral(", "));
+    m_rolesLabel->setText(tr("Rol(es): %1").arg(roles));
 }
 
 void MainWindow::refreshConnectionState()
@@ -259,7 +268,7 @@ void MainWindow::refreshConnectionState()
 
     if (wasConnected && !m_connected) {
         statusBar()->showMessage(
-            tr("Database connection lost. Maintenance actions are disabled."));
+            tr("Se perdio la conexion con la base de datos. Las acciones de mantenimiento estan deshabilitadas."));
     } else if (!wasConnected && m_connected) {
         // Reload cached pages so FK ComboBoxes and grids reflect the live data.
         for (QWidget *page : std::as_const(m_pages)) {
@@ -268,7 +277,7 @@ void MainWindow::refreshConnectionState()
             else if (auto *roles = qobject_cast<AdminRolesWidget *>(page))
                 roles->refreshAfterReconnect();
         }
-        statusBar()->showMessage(tr("Database connection restored."), 5000);
+        statusBar()->showMessage(tr("Conexion con la base de datos restablecida."), 5000);
     }
 }
 
@@ -291,18 +300,18 @@ QString MainWindow::moduleTitle(const QString &module) const
 QString MainWindow::tableTitle(const QString &table) const
 {
     static const QHash<QString, QString> titles = {
-        {QStringLiteral("location_country"), tr("Countries")},
-        {QStringLiteral("location_subdivision"), tr("Subdivisions")},
-        {QStringLiteral("catalog_constituent"), tr("Constituents")},
-        {QStringLiteral("catalog_containertype"), tr("Container Types")},
-        {QStringLiteral("catalog_toxicitylevel"), tr("Toxicity Levels")},
-        {QStringLiteral("catalog_transporttype"), tr("Transport Types")},
-        {QStringLiteral("user_user"), tr("Users")},
-        {QStringLiteral("waste_generatorcompany"), tr("Generator Companies")},
-        {QStringLiteral("waste_waste"), tr("Waste")},
-        {QStringLiteral("transfer_destination"), tr("Destinations")},
-        {QStringLiteral("transfer_travelcompany"), tr("Travel Companies")},
-        {QStringLiteral("transfer_transfer"), tr("Transfers")},
+        {QStringLiteral("location_country"), tr("Paises")},
+        {QStringLiteral("location_subdivision"), tr("Subdivisiones")},
+        {QStringLiteral("catalog_constituent"), tr("Componentes")},
+        {QStringLiteral("catalog_containertype"), tr("Tipos de contenedores")},
+        {QStringLiteral("catalog_toxicitylevel"), tr("Niveles de toxicidad")},
+        {QStringLiteral("catalog_transporttype"), tr("Tipos de transporte")},
+        {QStringLiteral("user_user"), tr("Usuarios")},
+        {QStringLiteral("waste_generatorcompany"), tr("Empresas generadoras")},
+        {QStringLiteral("waste_waste"), tr("Residuos")},
+        {QStringLiteral("transfer_destination"), tr("Destinos")},
+        {QStringLiteral("transfer_travelcompany"), tr("Empresas transportistas")},
+        {QStringLiteral("transfer_transfer"), tr("Traslados")},
         {QStringLiteral("auth_group"), tr("Roles")},
     };
     return titles.value(table, table);
