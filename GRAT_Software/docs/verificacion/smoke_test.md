@@ -7,8 +7,9 @@
 - **Entorno:** WSL2 + WSLg (Qt 6 Widgets/Sql, driver `QSQLITE`), CMake 3.16+ con Ninja
 - **Base de datos:** `db/grat.db` relativa al directorio de trabajo
 
-> Las filas marcadas `⬜` se completan en la prueba manual con interfaz gráfica.
-> Las verificaciones de línea de comandos ya están ejecutadas y documentadas.
+> **Alcance de esta ronda:** verificaciones automáticas y prueba de conexión
+> ejecutadas. Las filas con `⬜` no se ejecutaron (recorrido CRUD, validación,
+> persistencia desde la GUI y restauración de la conexión).
 
 ## 1. Arranque
 
@@ -69,9 +70,10 @@ módulo. Anotar en cada celda si la acción funciona y adjuntar captura.
 
 | Caso | Esperado | Obtenido | Estado | Captura |
 |---|---|---|---|---|
-| Cerrar sesión e iniciar como `operator` | Solo 4 módulos y 11 tablas; sin User ni Admin | ⬜ | ⬜ | ⬜ |
-| Botones según permisos | `Add` activo en Waste/Transfers; solo lectura en Countries y Destinations | ⬜ | ⬜ | ⬜ |
-| Acción no permitida | Botón deshabilitado; no se puede ejecutar | ⬜ | ⬜ | ⬜ |
+| Cerrar sesión e iniciar como `operator` | Solo 4 módulos y 11 tablas; sin User ni Admin | Verificado en la Fase 1: 4 módulos y 11 tablas, sin User ni Admin | ✅ | `login_roles.md` · `capturas/03-operator-botones.png` |
+| Solo lectura en Countries | Botones de escritura deshabilitados | Verificado en la Fase 1: todos los botones deshabilitados | ✅ | `capturas/03-operator-botones.png` |
+| `Add` activo en Waste y Transfers | Acciones permitidas según `add_<model>` | ⬜ | ⬜ | — |
+| Acción no permitida | Botón deshabilitado; no se puede ejecutar | ⬜ | ⬜ | — |
 
 ## 5. Persistencia
 
@@ -85,7 +87,7 @@ módulo. Anotar en cada celda si la acción funciona y adjuntar captura.
 | Caso | Esperado | Obtenido | Estado | Evidencia |
 |---|---|---|---|---|
 | Arranque sin poder crear/abrir `db/` | No crea la BD, informa del fallo y no continúa | `db` como archivo regular: error `database directory: Could not create database directory: db`, sin archivo de BD creado | ✅ | Ejecución headless; el diálogo modal queda abierto (proceso detenido por `timeout`) |
-| Mantenimiento bloqueado con la BD caída | Acciones deshabilitadas y estado visible | ⬜ | ⬜ | — |
+| Mantenimiento bloqueado con la BD caída | Acciones deshabilitadas y estado visible | Barra en rojo `● DB unavailable — maintenance disabled`; rejilla, formulario y botones atenuados y deshabilitados | ✅ | `capturas/smoke/bd-no disponible.png` |
 | Restauración de la conexión | Se rehabilitan las acciones | ⬜ | ⬜ | — |
 
 ## 7. Observaciones / bugs encontrados
@@ -97,4 +99,10 @@ módulo. Anotar en cada celda si la acción funciona y adjuntar captura.
 - El árbol de trabajo conserva 34 archivos con cambios solo de fin de línea
   (LF→CRLF) ajenos a esta rama; no se han modificado ni commiteado y no afectan
   al build ni al comportamiento.
-- Las pruebas con interfaz (secciones 2–6) quedan pendientes de completar.
+- La prueba de conexión se ejecutó con la app abierta como `admin` y la base de
+  datos no disponible: la captura evidencia el estado rojo y el mantenimiento
+  deshabilitado. No se capturó la restauración de la conexión.
+- Quedan sin evidencia en esta ronda: recorrido CRUD por módulo (sección 2),
+  casos de validación (sección 3), `Add` habilitado como Operator y acciones no
+  permitidas (sección 4), persistencia desde la GUI (sección 5) y restauración de
+  la conexión (sección 6).
