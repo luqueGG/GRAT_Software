@@ -114,7 +114,7 @@ WSLg). Capturas en `docs/verificacion/capturas/`.
 | Login correcto de `operator` | 19 permisos, módulos permitidos | Ventana `GRAT_Software — operator`; 4 módulos (sin User ni Admin), 11 tablas; `User: operator`, `Role(s): Operator` | ✅ | `capturas/03-operator-botones.png` |
 | Contraseña incorrecta | Rechazo con mensaje genérico | `admin` con clave errónea: `Invalid username or password.` en rojo; el diálogo permanece abierto y se limpia el campo de contraseña | ✅ | `capturas/04-contraseñaIncorrecta.png` |
 | Usuario inexistente | Rechazo con el mismo mensaje genérico | Usuario `pepito`: mismo texto `Invalid username or password.` (no distingue de clave incorrecta) | ✅ | `capturas/05-usuario-inexistente.png` |
-| Campos vacíos | Rechazo sin consultar la BD | — | ⏳ manual | — |
+| Campos vacíos | Rechazo sin consultar la BD | Usuario y contraseña vacíos: `Enter your username and password.` | ✅ | `capturas/06-campos-vacios.png` |
 | Usuario inactivo (`is_active='I'`) | Rechazo con mensaje genérico | — | ⏳ manual | — |
 | Mensajes de error sin SQL ni nombres de tablas | Sin detalles internos | — | ⏳ manual | — |
 | Botones deshabilitados según el rol | Solo acciones permitidas | `operator` en Location → Countries: `Add`, `Modify`, `Delete`, `Inactivate`, `Reactivate` y `Update` deshabilitados (solo tiene `view_country`) | ✅ | `capturas/03-operator-botones.png` |
