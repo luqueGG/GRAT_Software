@@ -28,6 +28,7 @@ const std::vector<TableSpec> &allTableSpecs()
                 ColumnSpec{.dbColumn = "name", .label = "Name", .type = ColumnType::Text, .maxLength = 100},
                 ColumnSpec{.dbColumn = "is_active", .label = "State", .type = ColumnType::State, .editable = false, .isState = true},
             },
+            .children = {},
         },
         TableSpec{
             .table = "location_subdivision",
@@ -44,6 +45,7 @@ const std::vector<TableSpec> &allTableSpecs()
                 ColumnSpec{.dbColumn = "name", .label = "Name", .type = ColumnType::Text, .maxLength = 100},
                 ColumnSpec{.dbColumn = "is_active", .label = "State", .type = ColumnType::State, .editable = false, .isState = true},
             },
+            .children = {},
         },
 
         // =====================================================================
@@ -61,6 +63,7 @@ const std::vector<TableSpec> &allTableSpecs()
                 ColumnSpec{.dbColumn = "name", .label = "Name", .type = ColumnType::Text, .maxLength = 50},
                 ColumnSpec{.dbColumn = "is_active", .label = "State", .type = ColumnType::State, .editable = false, .isState = true},
             },
+            .children = {},
         },
         TableSpec{
             .table = "catalog_containertype",
@@ -75,6 +78,7 @@ const std::vector<TableSpec> &allTableSpecs()
                 ColumnSpec{.dbColumn = "description", .label = "Description", .type = ColumnType::Text, .maxLength = 200},
                 ColumnSpec{.dbColumn = "is_active", .label = "State", .type = ColumnType::State, .editable = false, .isState = true},
             },
+            .children = {},
         },
         TableSpec{
             .table = "catalog_toxicitylevel",
@@ -89,6 +93,7 @@ const std::vector<TableSpec> &allTableSpecs()
                 ColumnSpec{.dbColumn = "description", .label = "Description", .type = ColumnType::Text, .maxLength = 200},
                 ColumnSpec{.dbColumn = "is_active", .label = "State", .type = ColumnType::State, .editable = false, .isState = true},
             },
+            .children = {},
         },
         TableSpec{
             .table = "catalog_transporttype",
@@ -103,6 +108,7 @@ const std::vector<TableSpec> &allTableSpecs()
                 ColumnSpec{.dbColumn = "description", .label = "Description", .type = ColumnType::Text, .maxLength = 200},
                 ColumnSpec{.dbColumn = "is_active", .label = "State", .type = ColumnType::State, .editable = false, .isState = true},
             },
+            .children = {},
         },
 
         // =====================================================================
@@ -176,6 +182,7 @@ const std::vector<TableSpec> &allTableSpecs()
                 ColumnSpec{.dbColumn = "activity", .label = "Activity", .type = ColumnType::Text, .maxLength = 200},
                 ColumnSpec{.dbColumn = "is_active", .label = "State", .type = ColumnType::State, .editable = false, .isState = true},
             },
+            .children = {},
         },
         TableSpec{
             .table = "waste_waste",
@@ -233,6 +240,7 @@ const std::vector<TableSpec> &allTableSpecs()
                            .refTable = "location_subdivision", .refPk = "subdiv_code", .refDisplay = "name"},
                 ColumnSpec{.dbColumn = "is_active", .label = "State", .type = ColumnType::State, .editable = false, .isState = true},
             },
+            .children = {},
         },
         TableSpec{
             .table = "transfer_travelcompany",
@@ -248,6 +256,7 @@ const std::vector<TableSpec> &allTableSpecs()
                            .refTable = "location_subdivision", .refPk = "subdiv_code", .refDisplay = "name"},
                 ColumnSpec{.dbColumn = "is_active", .label = "State", .type = ColumnType::State, .editable = false, .isState = true},
             },
+            .children = {},
         },
         TableSpec{
             .table = "transfer_transfer",
