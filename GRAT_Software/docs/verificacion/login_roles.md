@@ -69,6 +69,7 @@ PRAGMA foreign_key_check;
 |---|---|---|---|---|
 | Catálogo de permisos (`auth_permission`) | 43 | 43 | ✅ | `SELECT COUNT(*)` = 43 |
 | Permisos efectivos de `admin` (Administrator) | 43 | 43 | ✅ | id=1, `is_active='A'`, grupo Administrator con 43 |
+| Permisos efectivos de `supervisor` (Supervisor) | 36 | 36 | ✅ | id=2, `is_active='A'`, grupo Supervisor con 36, sin permisos directos |
 | Permisos efectivos de `operator` (Operator) | 19 | 19 | ✅ | id=3, `is_active='A'`, grupo Operator con 19, sin permisos directos |
 | Los 3 usuarios sembrados están activos | `A` en los 3 | `A`, `A`, `A` | ✅ | `user_user.is_active` |
 | Integridad referencial | Sin violaciones | `PRAGMA foreign_key_check` vacío | ✅ | `integrity_check` = `ok` |
@@ -94,6 +95,7 @@ usuarios: 3
 (3, 'operator', 'A', 0, 0, 97)
 
 admin        id=1 superuser=1 permisos_efectivos=43
+supervisor   id=2 superuser=0 permisos_efectivos=36
 operator     id=3 superuser=0 permisos_efectivos=19
 permisos directos: 0
 PRAGMA foreign_key_check: sin violaciones
