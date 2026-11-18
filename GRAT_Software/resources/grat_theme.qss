@@ -206,6 +206,23 @@ QTableCornerButton::section {
     border: 0;
 }
 
+QTableView#detailGrid,
+QTableView#rolesGrid,
+QTableView#permissionCatalogGrid {
+    font-size: 9.5pt;
+}
+
+QTableView#detailGrid::item,
+QTableView#rolesGrid::item,
+QTableView#permissionCatalogGrid::item {
+    padding: 6px 8px;
+}
+
+QTabWidget#detailTabs QTableView {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
 /* ---------- Formularios ---------- */
 QScrollArea#formScroll {
     background: #FFFFFF;
