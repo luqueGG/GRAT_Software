@@ -76,7 +76,7 @@ AdminRolesWidget::AdminRolesWidget(Database &database, const AuthSession &sessio
     m_catalogGrid->setObjectName(QStringLiteral("permissionCatalogGrid"));
     m_catalogModel = new QStandardItemModel(this);
     m_catalogModel->setHorizontalHeaderLabels(
-        {tr("ID"), tr("Nombre"), tr("Etiqueta de aplicación"), tr("Model"), tr("Código de permiso"), tr("Asignación")});
+        {tr("ID"), tr("Nombre"), tr("Etiqueta de aplicación"), tr("Modelo"), tr("Código de permiso"), tr("Asignación")});
     m_catalogGrid->setModel(m_catalogModel);
     m_catalogGrid->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_catalogGrid->setSelectionBehavior(QAbstractItemView::SelectRows);

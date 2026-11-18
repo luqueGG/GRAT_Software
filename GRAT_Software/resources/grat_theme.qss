@@ -500,3 +500,37 @@ QToolTip {
     border-radius: 5px;
     padding: 6px 8px;
 }
+
+
+/* ---------- Ajustes finales de interacción ---------- */
+QPushButton#addButton:pressed,
+QPushButton#modifyButton:pressed,
+QPushButton#updateButton:pressed,
+QPushButton#detailAddButton:pressed,
+QPushButton#detailEditButton:pressed,
+QPushButton#detailSaveButton:pressed {
+    background: #0A3D28;
+    border-color: #0A3D28;
+}
+
+QPushButton#reactivateButton:hover,
+QPushButton#detailReactivateButton:hover {
+    background: #DCEDE2;
+}
+
+QPushButton#cancelButton,
+QPushButton#detailCancelButton {
+    color: #626B73;
+}
+
+QHeaderView::section:hover {
+    background: #E8F0EB;
+}
+
+QTabBar::tab:hover {
+    background: #E8F0EB;
+}
+
+QTreeWidget#navigationTree::item:disabled {
+    color: #9AA1A7;
+}
