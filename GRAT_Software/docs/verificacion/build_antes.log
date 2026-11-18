@@ -1,0 +1,22 @@
+[1/2] Cleaning additional files...
+[2/2] Cleaning all built files...
+Cleaning... 17 files.
+[1/19] Automatic MOC and UIC for target grat_software
+[2/19] Automatic RCC for resources/grat_schema.qrc
+[3/19] Building CXX object CMakeFiles/grat_software.dir/grat_software_autogen/3YJK5W5UP7/qrc_grat_schema.cpp.o
+[4/19] Building CXX object CMakeFiles/grat_software.dir/src/core/auth/permission_checker.cpp.o
+[5/19] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/table_specs.cpp.o
+[6/19] Building CXX object CMakeFiles/grat_software.dir/src/core/auth/auth_service.cpp.o
+[7/19] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/validator.cpp.o
+[8/19] Building CXX object CMakeFiles/grat_software.dir/src/core/db/database.cpp.o
+[9/19] Building CXX object CMakeFiles/grat_software.dir/src/main.cpp.o
+[10/19] Building CXX object CMakeFiles/grat_software.dir/grat_software_autogen/mocs_compilation.cpp.o
+[11/19] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/table_gateway.cpp.o
+[12/19] Building CXX object CMakeFiles/grat_software.dir/src/core/errors/error_handler.cpp.o
+[13/19] Building CXX object CMakeFiles/grat_software.dir/src/ui/login_dialog.cpp.o
+[14/19] Building CXX object CMakeFiles/grat_software.dir/src/ui/register_form.cpp.o
+[15/19] Building CXX object CMakeFiles/grat_software.dir/src/ui/main_window.cpp.o
+[16/19] Building CXX object CMakeFiles/grat_software.dir/src/ui/admin_roles_widget.cpp.o
+[17/19] Building CXX object CMakeFiles/grat_software.dir/src/ui/crud_widget.cpp.o
+[18/19] Building CXX object CMakeFiles/grat_software.dir/src/ui/master_detail_widget.cpp.o
+[19/19] Linking CXX executable grat_software
