@@ -1,4 +1,4 @@
-﻿#include "validator.h"
+#include "validator.h"
 
 #include "core/crud/table_gateway.h"
 
@@ -50,7 +50,7 @@ QList<ValidationError> Validator::validate(const TableSpec &spec, const QVariant
         // --- Max length (Req 7.3) — text-like columns --------------------------
         if (c.maxLength > 0 && (c.type == ColumnType::Text || c.type == ColumnType::Password)) {
             if (valStr.length() > c.maxLength) {
-                errors.append({col, QStringLiteral("%1 supera la longitud máxima de %2 caracteres.")
+                errors.append({col, QStringLiteral("%1 supera la longitud maxima de %2 caracteres.")
                                     .arg(label).arg(c.maxLength)});
             }
         }
@@ -67,7 +67,7 @@ QList<ValidationError> Validator::validate(const TableSpec &spec, const QVariant
         if (col == QStringLiteral("email")) {
             static const QRegularExpression re(QStringLiteral("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"));
             if (!re.match(valStr).hasMatch())
-                errors.append({col, QStringLiteral("%1 no es una dirección de correo válida.").arg(label)});
+                errors.append({col, QStringLiteral("%1 no es una direccion de correo valida.").arg(label)});
         }
     }
 
@@ -93,7 +93,7 @@ QList<ValidationError> Validator::validate(const TableSpec &spec, const QVariant
             && !constituent.isNull() && !constituent.toString().isEmpty()
             && m_gateway.constituentExists(waste, constituent, excluded)) {
             errors.append({QStringLiteral("id_constituent_id"),
-                           QStringLiteral("Este componente ya está vinculado a este residuo. "
+                           QStringLiteral("Este componente ya esta vinculado a este residuo. "
                                           "Modifique o reactive la fila existente.")});
         }
     }

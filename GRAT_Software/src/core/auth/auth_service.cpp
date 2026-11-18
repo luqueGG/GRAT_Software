@@ -18,12 +18,12 @@ void setError(QString *errorMessage, const QString &message)
 
 QString invalidCredentials()
 {
-    return QStringLiteral("Usuario o contraseña incorrectos.");
+    return QStringLiteral("Usuario o contrasena incorrectos.");
 }
 
 QString databaseUnavailable()
 {
-    return QStringLiteral("La base de datos no está disponible.");
+    return QStringLiteral("La base de datos no esta disponible.");
 }
 
 } // namespace

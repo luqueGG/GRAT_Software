@@ -119,7 +119,7 @@ QWidget *RegisterForm::createField(const ColumnSpec &column)
         dateTimeEdit->setCalendarPopup(true);
         dateTimeEdit->setDisplayFormat(QStringLiteral("yyyy-MM-dd HH:mm:ss"));
         dateTimeEdit->setMinimumDateTime(QDateTime(QDate(1900, 1, 1), QTime(0, 0)));
-        dateTimeEdit->setSpecialValueText(tr("—"));
+        dateTimeEdit->setSpecialValueText(tr("-"));
         dateTimeEdit->setDateTime(QDateTime::currentDateTime());
         return dateTimeEdit;
     }
@@ -143,7 +143,7 @@ QComboBox *RegisterForm::createCombo(const ColumnSpec &column)
 {
     auto *combo = new QComboBox(this);
     combo->setObjectName(QStringLiteral("field_") + QString::fromLatin1(column.dbColumn));
-    combo->addItem(tr("— Seleccionar —"), QVariant());
+    combo->addItem(tr("- Seleccionar -"), QVariant());
     return combo;
 }
 
@@ -203,7 +203,7 @@ void RegisterForm::populateRefValues()
             continue;
 
         field.combo->clear();
-        field.combo->addItem(tr("— Seleccionar —"), QVariant());
+        field.combo->addItem(tr("- Seleccionar -"), QVariant());
 
         const QString label = field.column->label
             ? QString::fromLatin1(field.column->label)
@@ -460,7 +460,7 @@ void RegisterForm::setState(const QString &state)
     for (const Field &field : m_fields) {
         if (!field.stateLabel)
             continue;
-        field.stateLabel->setText(tr("● %1").arg(text));
+        field.stateLabel->setText(tr("* %1").arg(text));
         field.stateLabel->setStyleSheet(
             QStringLiteral("color: %1; font-weight: 600;").arg(color));
     }

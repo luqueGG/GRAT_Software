@@ -36,11 +36,11 @@ struct ModuleDef
 
 const ModuleDef kModules[] = {
     {"location", "Ubicaciones"},
-    {"catalog", "Catálogos"},
+    {"catalog", "Catalogos"},
     {"user", "Usuarios"},
     {"waste", "Residuos"},
     {"transfer", "Transporte"},
-    {"admin", "Administración"},
+    {"admin", "Administracion"},
 };
 
 } // namespace
@@ -84,7 +84,7 @@ MainWindow::MainWindow(Database &database, const AuthSession &session, QWidget *
     m_connectionTimer->start();
     refreshConnectionState();
 
-    setWindowTitle(QStringLiteral("GRAT_Software — %1").arg(m_session.username));
+    setWindowTitle(QStringLiteral("GRAT_Software - %1").arg(m_session.username));
 
     // Open the first permitted table so the workspace is never blank.
     if (m_ui->navigationTree->topLevelItemCount() > 0) {
@@ -103,7 +103,7 @@ void MainWindow::buildMenus()
     exitAction->setShortcut(QKeySequence::Quit);
     connect(exitAction, &QAction::triggered, this, &QWidget::close);
 
-    QMenu *modulesMenu = menuBar()->addMenu(tr("&Módulos"));
+    QMenu *modulesMenu = menuBar()->addMenu(tr("&Modulos"));
     for (const ModuleDef &module : kModules) {
         QMenu *moduleMenu = nullptr;
         for (const TableSpec &spec : allTableSpecs()) {
@@ -127,8 +127,8 @@ void MainWindow::buildMenus()
     connect(aboutAction, &QAction::triggered, this, [this] {
         QMessageBox::about(this, tr("Acerca de GRAT_Software"),
                            tr("<b>GRAT_Software</b><br>"
-                              "Gestión Responsable de Residuos de Transporte.<br><br>"
-                              "Ha iniciado sesión como <b>%1</b>.")
+                              "Gestion Responsable de Residuos de Transporte.<br><br>"
+                              "Ha iniciado sesion como <b>%1</b>.")
                                .arg(m_session.username.toHtmlEscaped()));
     });
 }
@@ -238,11 +238,11 @@ void MainWindow::navigateToTable(const QString &table)
 void MainWindow::updateStatusBar()
 {
     if (m_connected) {
-        m_dbStatusLabel->setText(tr("● Base de datos conectada"));
+        m_dbStatusLabel->setText(tr("* Base de datos conectada"));
         m_dbStatusLabel->setStyleSheet(QStringLiteral("color: #176B45; font-weight: 600;"));
         m_dbStatusLabel->setToolTip(QString());
     } else {
-        m_dbStatusLabel->setText(tr("● Base de datos no disponible — mantenimiento deshabilitado"));
+        m_dbStatusLabel->setText(tr("* Base de datos no disponible - mantenimiento deshabilitado"));
         m_dbStatusLabel->setStyleSheet(QStringLiteral("color: #b00020;"));
         m_dbStatusLabel->setToolTip(m_database.lastError());
     }
@@ -268,7 +268,7 @@ void MainWindow::refreshConnectionState()
 
     if (wasConnected && !m_connected) {
         statusBar()->showMessage(
-            tr("Se perdió la conexión con la base de datos. Las acciones de mantenimiento están deshabilitadas."));
+            tr("Se perdio la conexion con la base de datos. Las acciones de mantenimiento estan deshabilitadas."));
     } else if (!wasConnected && m_connected) {
         // Reload cached pages so FK ComboBoxes and grids reflect the live data.
         for (QWidget *page : std::as_const(m_pages)) {
@@ -277,7 +277,7 @@ void MainWindow::refreshConnectionState()
             else if (auto *roles = qobject_cast<AdminRolesWidget *>(page))
                 roles->refreshAfterReconnect();
         }
-        statusBar()->showMessage(tr("Conexión con la base de datos restablecida."), 5000);
+        statusBar()->showMessage(tr("Conexion con la base de datos restablecida."), 5000);
     }
 }
 
@@ -300,7 +300,7 @@ QString MainWindow::moduleTitle(const QString &module) const
 QString MainWindow::tableTitle(const QString &table) const
 {
     static const QHash<QString, QString> titles = {
-        {QStringLiteral("location_country"), tr("Países")},
+        {QStringLiteral("location_country"), tr("Paises")},
         {QStringLiteral("location_subdivision"), tr("Subdivisiones")},
         {QStringLiteral("catalog_constituent"), tr("Componentes")},
         {QStringLiteral("catalog_containertype"), tr("Tipos de contenedores")},

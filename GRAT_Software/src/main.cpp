@@ -67,9 +67,9 @@ int main(int argc, char *argv[])
     if (!database.open()) {
         QMessageBox::critical(
             nullptr,
-            QStringLiteral("GRAT_Software — Error de base de datos"),
+            QStringLiteral("GRAT_Software - Error de base de datos"),
             QStringLiteral("No se pudo conectar con la base de datos.\n\n%1\n\n"
-                          "La aplicación se cerrará.")
+                          "La aplicacion se cerrara.")
                 .arg(database.lastError()));
         return 1;
     }

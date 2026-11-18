@@ -55,20 +55,20 @@ QString ErrorHandler::defaultMessage(Category category)
 {
     switch (category) {
     case Category::Validation:
-        return QStringLiteral("Algunos valores ingresados no son válidos. "
+        return QStringLiteral("Algunos valores ingresados no son validos. "
                               "Revise los campos marcados.");
     case Category::Connection:
-        return QStringLiteral("La base de datos no está disponible. "
-                              "Las acciones de mantenimiento están deshabilitadas temporalmente.");
+        return QStringLiteral("La base de datos no esta disponible. "
+                              "Las acciones de mantenimiento estan deshabilitadas temporalmente.");
     case Category::Persistence:
-        return QStringLiteral("No se pudo completar la operación. No se guardaron cambios.");
+        return QStringLiteral("No se pudo completar la operacion. No se guardaron cambios.");
     case Category::Reference:
         return QStringLiteral("No se pudieron cargar los registros relacionados. "
                               "El campo afectado permanece deshabilitado.");
     case Category::Unexpected:
         break;
     }
-    return QStringLiteral("Ocurrió un error inesperado. No se pudo completar la operación.");
+    return QStringLiteral("Ocurrio un error inesperado. No se pudo completar la operacion.");
 }
 
 bool ErrorHandler::shouldAnnounce(const QString &key, int cooldownMs)

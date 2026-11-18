@@ -20,14 +20,14 @@ QString connectionFailureMessage()
 
 QString recoveryFailureMessage()
 {
-    return QStringLiteral("El archivo de base de datos no está disponible. "
+    return QStringLiteral("El archivo de base de datos no esta disponible. "
                           "El mantenimiento permanece deshabilitado hasta que se restaure el archivo "
                           "original de la base de datos.");
 }
 
 QString invalidDatabaseMessage()
 {
-    return QStringLiteral("El archivo de base de datos no es una base de datos válida de GRAT_Software. "
+    return QStringLiteral("El archivo de base de datos no es una base de datos valida de GRAT_Software. "
                           "El mantenimiento permanece deshabilitado para proteger los datos originales.");
 }
 

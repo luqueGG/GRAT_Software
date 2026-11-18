@@ -31,12 +31,12 @@ AdminRolesWidget::AdminRolesWidget(Database &database, const AuthSession &sessio
     layout->addWidget(heading);
 
     if (!PermissionChecker::canManageRoles(m_session)) {
-        layout->addWidget(new QLabel(tr("No está autorizado para gestionar roles."), this));
+        layout->addWidget(new QLabel(tr("No esta autorizado para gestionar roles."), this));
         return;
     }
 
     auto *hint = new QLabel(tr("Seleccione un rol para gestionar sus permisos. "
-                              "Los cambios surten efecto para los usuarios en su próximo inicio de sesión."), this);
+                              "Los cambios surten efecto para los usuarios en su proximo inicio de sesion."), this);
     hint->setWordWrap(true);
     layout->addWidget(hint);
 
@@ -76,7 +76,7 @@ AdminRolesWidget::AdminRolesWidget(Database &database, const AuthSession &sessio
     m_catalogGrid->setObjectName(QStringLiteral("permissionCatalogGrid"));
     m_catalogModel = new QStandardItemModel(this);
     m_catalogModel->setHorizontalHeaderLabels(
-        {tr("ID"), tr("Nombre"), tr("Etiqueta de aplicación"), tr("Modelo"), tr("Código de permiso"), tr("Asignación")});
+        {tr("ID"), tr("Nombre"), tr("Etiqueta de aplicacion"), tr("Modelo"), tr("Codigo de permiso"), tr("Asignacion")});
     m_catalogGrid->setModel(m_catalogModel);
     m_catalogGrid->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_catalogGrid->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -204,7 +204,7 @@ void AdminRolesWidget::refreshCatalog()
         m_catalogModel->appendRow(items);
     }
     m_catalogSummary->setText(roleKey.isValid()
-        ? tr("Permisos del sistema (solo lectura): %1 — Asignados: %2 — Disponibles: %3")
+        ? tr("Permisos del sistema (solo lectura): %1 - Asignados: %2 - Disponibles: %3")
               .arg(permissions.size()).arg(assignedCount).arg(permissions.size() - assignedCount)
         : tr("Permisos del sistema (solo lectura): %1. Seleccione un rol para ver las asignaciones.")
               .arg(permissions.size()));

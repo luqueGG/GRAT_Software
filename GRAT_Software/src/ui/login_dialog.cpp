@@ -18,7 +18,7 @@ LoginDialog::LoginDialog(AuthService &authService, QWidget *parent)
     m_ui->errorLabel->hide();
 
     if (QPushButton *signIn = m_ui->buttonBox->button(QDialogButtonBox::Ok))
-        signIn->setText(tr("Iniciar sesión"));
+        signIn->setText(tr("Iniciar sesion"));
     if (QPushButton *cancel = m_ui->buttonBox->button(QDialogButtonBox::Cancel))
         cancel->setText(tr("Cancelar"));
 
@@ -51,14 +51,14 @@ void LoginDialog::attemptLogin()
     const QString username = m_ui->usernameEdit->text().trimmed();
     const QString password = m_ui->passwordEdit->text();
     if (username.isEmpty() || password.isEmpty()) {
-        showError(tr("Ingrese su usuario y contraseña."));
+        showError(tr("Ingrese su usuario y contrasena."));
         return;
     }
 
     QString error;
     const std::optional<AuthSession> session = m_authService.login(username, password, &error);
     if (!session) {
-        showError(error.isEmpty() ? tr("No se pudo completar el inicio de sesión.") : error);
+        showError(error.isEmpty() ? tr("No se pudo completar el inicio de sesion.") : error);
         m_ui->passwordEdit->clear();
         m_ui->passwordEdit->setFocus();
         return;

@@ -394,8 +394,8 @@ void MasterDetailWidget::removeRow()
 
     const auto answer = QMessageBox::question(
         this, isRolePermissions() ? tr("Revocar permiso") : tr("Quitar %1").arg(title()),
-        isRolePermissions() ? tr("¿Revocar el permiso seleccionado de este rol?")
-                            : tr("¿Quitar la fila seleccionada? Este vínculo se eliminará permanentemente."));
+        isRolePermissions() ? tr("Revocar el permiso seleccionado de este rol?")
+                            : tr("Quitar la fila seleccionada? Este vinculo se eliminara permanentemente."));
     if (answer != QMessageBox::Yes || !allowed(PermissionAction::Change))
         return;
 
@@ -404,7 +404,7 @@ void MasterDetailWidget::removeRow()
         ? m_gateway.revokeRolePermission(m_session, m_parentKey, linkKey)
         : m_gateway.removeChild(m_child, m_parentKey, linkKey);
     if (!result.success) {
-        QMessageBox::critical(this, tr("Operación fallida"), result.error);
+        QMessageBox::critical(this, tr("Operacion fallida"), result.error);
         return;
     }
     refresh();
@@ -424,7 +424,7 @@ void MasterDetailWidget::applyState(const QString &newState)
     const DbResult result = m_gateway.setChildState(
         m_child, m_parentKey, currentRecord().value(QStringLiteral("id")), newState);
     if (!result.success) {
-        QMessageBox::critical(this, tr("Operación fallida"), result.error);
+        QMessageBox::critical(this, tr("Operacion fallida"), result.error);
         return;
     }
     refresh();
@@ -462,7 +462,7 @@ void MasterDetailWidget::save()
         QStringList details;
         details.reserve(errors.size());
         for (const ValidationError &error : errors)
-            details << QStringLiteral("• %1").arg(error.reason);
+            details << QStringLiteral("- %1").arg(error.reason);
         QMessageBox::warning(this, tr("Validation failed"),
                              tr("Corrija los siguientes campos:\n\n%1")
                                  .arg(details.join(QLatin1Char('\n'))));

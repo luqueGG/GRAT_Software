@@ -393,7 +393,7 @@ void CrudWidget::applyState(const QString &newState)
 
     const DbResult result = m_gateway.setState(m_spec, currentPk(), newState);
     if (!result.success) {
-        QMessageBox::critical(this, tr("Operación fallida"), result.error);
+        QMessageBox::critical(this, tr("Operacion fallida"), result.error);
         return;
     }
 
@@ -406,7 +406,7 @@ void CrudWidget::updateRecord()
     if (m_operation == Operation::Idle) {
         // Req 5.2: Update without a pending operation explains why nothing happens.
         QMessageBox::information(this, tr("Actualizar registro"),
-                                 tr("No hay una operación pendiente para actualizar. "
+                                 tr("No hay una operacion pendiente para actualizar. "
                                     "Elija Agregar o Modificar primero."));
         return;
     }
@@ -438,7 +438,7 @@ void CrudWidget::updateRecord()
         QStringList details;
         details.reserve(errors.size());
         for (const ValidationError &error : errors)
-            details << QStringLiteral("• %1").arg(error.reason);
+            details << QStringLiteral("- %1").arg(error.reason);
         QMessageBox::warning(this, tr("Validation failed"),
                              tr("Corrija los siguientes campos:\n\n%1")
                                  .arg(details.join(QLatin1Char('\n'))));
@@ -464,7 +464,7 @@ void CrudWidget::updateRecord()
         result = m_gateway.update(m_spec, currentPk(), values);
 
     if (!result.success) {
-        QMessageBox::critical(this, tr("Actualización fallida"), result.error);
+        QMessageBox::critical(this, tr("Actualizacion fallida"), result.error);
         return;
     }
 
@@ -539,7 +539,7 @@ QString CrudWidget::displayValue(const ColumnSpec &column, const QVariant &value
     case ColumnType::State:
         return stateText(value.toString());
     case ColumnType::Boolean:
-        return value.toInt() != 0 ? tr("Sí") : tr("No");
+        return value.toInt() != 0 ? tr("Si") : tr("No");
     case ColumnType::Decimal:
         return QString::number(value.toDouble(), 'f', 2);
     case ColumnType::DateTime: {

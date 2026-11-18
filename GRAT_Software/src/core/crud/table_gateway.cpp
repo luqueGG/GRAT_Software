@@ -12,7 +12,7 @@ namespace {
 
 QString unavailableMessage()
 {
-    return QStringLiteral("La base de datos no está disponible. La operación se canceló.");
+    return QStringLiteral("La base de datos no esta disponible. La operacion se cancelo.");
 }
 
 QString saveMessage()
@@ -67,7 +67,7 @@ QList<QVariantMap> TableGateway::selectAll(const TableSpec &spec, QString *error
         const ErrorHandler::Failure failure = ErrorHandler::failure(
             ErrorHandler::Category::Connection, QStringLiteral("select all"),
             QStringLiteral("Connection is closed."),
-            QStringLiteral("No se pudieron cargar los registros porque la base de datos no está disponible."));
+            QStringLiteral("No se pudieron cargar los registros porque la base de datos no esta disponible."));
         if (errorMessage)
             *errorMessage = failure.message;
         return rows;
@@ -106,8 +106,8 @@ QList<QVariantMap> TableGateway::rolePermissionCatalog(const QVariant &roleKey,
         const ErrorHandler::Failure failure = ErrorHandler::failure(
             ErrorHandler::Category::Connection, QStringLiteral("permission catalog"),
             QStringLiteral("Connection is closed."),
-            QStringLiteral("No se pudo cargar el catálogo de permisos porque la "
-                           "base de datos no está disponible."));
+            QStringLiteral("No se pudo cargar el catalogo de permisos porque la "
+                           "base de datos no esta disponible."));
         if (errorMessage)
             *errorMessage = failure.message;
         return rows;
@@ -125,7 +125,7 @@ QList<QVariantMap> TableGateway::rolePermissionCatalog(const QVariant &roleKey,
         const ErrorHandler::Failure failure = ErrorHandler::sqlFailure(
             query.lastError(), ErrorHandler::Category::Persistence,
             QStringLiteral("load permission catalog"),
-            QStringLiteral("No se pudo cargar el catálogo de permisos."));
+            QStringLiteral("No se pudo cargar el catalogo de permisos."));
         if (errorMessage)
             *errorMessage = failure.message;
         return rows;
@@ -154,7 +154,7 @@ QList<QVariantMap> TableGateway::selectChildren(const ChildTableSpec &child,
             ErrorHandler::Category::Connection, QStringLiteral("select child rows"),
             QStringLiteral("Connection is closed."),
             QStringLiteral("No se pudieron cargar los registros asignados porque la "
-                           "base de datos no está disponible."));
+                           "base de datos no esta disponible."));
         if (errorMessage)
             *errorMessage = failure.message;
         return rows;
@@ -198,7 +198,7 @@ QList<RefValue> TableGateway::loadRefValues(const QString &refTable, const QStri
             QStringLiteral("load reference list %1").arg(refTable),
             QStringLiteral("Connection is closed."),
             QStringLiteral("No se pudieron cargar los registros relacionados porque la "
-                           "base de datos no está disponible."));
+                           "base de datos no esta disponible."));
         if (errorMessage)
             *errorMessage = failure.message;
         return values;
@@ -398,8 +398,8 @@ DbResult TableGateway::update(const TableSpec &spec, const QVariant &pk,
     if (q.numRowsAffected() != 1) {
         return fail(QSqlError(), QStringLiteral("update %1 (record not found)")
                                      .arg(QString::fromLatin1(spec.table)),
-                    QStringLiteral("El registro ya no está disponible. "
-                                   "Actualice la tabla e inténtelo de nuevo."));
+                    QStringLiteral("El registro ya no esta disponible. "
+                                   "Actualice la tabla e intentelo de nuevo."));
     }
     if (!m_db.commit()) {
         const QSqlError error = m_db.lastError();
@@ -448,8 +448,8 @@ DbResult TableGateway::setState(const TableSpec &spec, const QVariant &pk,
     if (q.numRowsAffected() != 1) {
         return fail(QSqlError(), QStringLiteral("state change on %1 (record not found)")
                                      .arg(QString::fromLatin1(spec.table)),
-                    QStringLiteral("El registro ya no está disponible. "
-                                   "Actualice la tabla e inténtelo de nuevo."));
+                    QStringLiteral("El registro ya no esta disponible. "
+                                   "Actualice la tabla e intentelo de nuevo."));
     }
     if (!m_db.commit()) {
         const QSqlError error = m_db.lastError();
@@ -503,8 +503,8 @@ DbResult TableGateway::remove(const TableSpec &spec, const QVariant &pk) const
     }
     if (q.numRowsAffected() != 1) {
         m_db.rollback();
-        return {false, QStringLiteral("El registro ya no está disponible. "
-                                      "Actualice la tabla e inténtelo de nuevo."), {},
+        return {false, QStringLiteral("El registro ya no esta disponible. "
+                                      "Actualice la tabla e intentelo de nuevo."), {},
                 ErrorHandler::Category::Persistence};
     }
     if (!m_db.commit()) {
@@ -626,7 +626,7 @@ DbResult TableGateway::writeChild(const ChildTableSpec &child, const QVariant &p
 
 QString TableGateway::genericError()
 {
-    return QStringLiteral("No se pudo completar la operación.");
+    return QStringLiteral("No se pudo completar la operacion.");
 }
 
 DbResult TableGateway::grantRolePermission(const AuthSession &session, const QVariant &roleKey,
@@ -645,7 +645,7 @@ DbResult TableGateway::writeRolePermission(const AuthSession &session, const QVa
                                            const QVariant &key, bool grant) const
 {
     if (!PermissionChecker::canManageRoles(session))
-        return {false, QStringLiteral("No está autorizado para gestionar roles."), {},
+        return {false, QStringLiteral("No esta autorizado para gestionar roles."), {},
                 ErrorHandler::Category::Validation};
     if (!m_db.isOpen())
         return unavailableResult();
@@ -655,7 +655,7 @@ DbResult TableGateway::writeRolePermission(const AuthSession &session, const QVa
     const qint64 roleId = roleKey.toLongLong(&roleValid);
     const qint64 selectedId = key.toLongLong(&keyValid);
     if (!roleValid || !keyValid || roleId <= 0 || selectedId <= 0)
-        return {false, QStringLiteral("Seleccione primero un rol y un permiso válidos."), {},
+        return {false, QStringLiteral("Seleccione primero un rol y un permiso validos."), {},
                 ErrorHandler::Category::Validation};
 
     if (!m_db.transaction()) {
@@ -691,11 +691,11 @@ DbResult TableGateway::writeRolePermission(const AuthSession &session, const QVa
         check.finish();
         if (!selectionExists) {
             return fail(QSqlError(), QStringLiteral("validate role permission selection"),
-                        QStringLiteral("El rol o permiso seleccionado ya no está disponible."));
+                        QStringLiteral("El rol o permiso seleccionado ya no esta disponible."));
         }
         if (duplicate) {
             return fail(QSqlError(), QStringLiteral("validate role permission selection"),
-                        QStringLiteral("Este permiso ya está asignado al rol seleccionado."));
+                        QStringLiteral("Este permiso ya esta asignado al rol seleccionado."));
         }
     }
 
