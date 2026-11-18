@@ -116,7 +116,7 @@ WSLg). Capturas en `docs/verificacion/capturas/`.
 | Usuario inexistente | Rechazo con el mismo mensaje genérico | Usuario `pepito`: mismo texto `Invalid username or password.` (no distingue de clave incorrecta) | ✅ | `capturas/05-usuario-inexistente.png` |
 | Campos vacíos | Rechazo sin consultar la BD | Usuario y contraseña vacíos: `Enter your username and password.` | ✅ | `capturas/06-campos-vacios.png` |
 | Usuario inactivo (`is_active='I'`) | Rechazo con mensaje genérico | Con `operator` en `is_active='I'`: `Invalid username or password.`, idéntico al de usuario inexistente; la BD se restauró después desde la copia de seguridad | ✅ | `capturas/07-usuario-inactivo.png` |
-| Mensajes de error sin SQL ni nombres de tablas | Sin detalles internos | — | ⏳ manual | — |
+| Mensajes de error sin SQL ni nombres de tablas | Sin detalles internos | Clave incorrecta, usuario inexistente, campos vacíos y usuario inactivo muestran solo mensajes genéricos: no aparecen SQL, `user_user`, hashes ni rutas de la BD | ✅ | `capturas/04-contraseñaIncorrecta.png` a `capturas/07-usuario-inactivo.png` |
 | Botones deshabilitados según el rol | Solo acciones permitidas | `operator` en Location → Countries: `Add`, `Modify`, `Delete`, `Inactivate`, `Reactivate` y `Update` deshabilitados (solo tiene `view_country`) | ✅ | `capturas/03-operator-botones.png` |
 
 ## Observaciones
