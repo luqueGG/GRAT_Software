@@ -18,12 +18,12 @@ void setError(QString *errorMessage, const QString &message)
 
 QString invalidCredentials()
 {
-    return QStringLiteral("Invalid username or password.");
+    return QStringLiteral("Usuario o contraseña incorrectos.");
 }
 
 QString databaseUnavailable()
 {
-    return QStringLiteral("The database is not available.");
+    return QStringLiteral("La base de datos no está disponible.");
 }
 
 } // namespace
@@ -113,7 +113,7 @@ bool AuthService::ensureDefaultUsers(QString *errorMessage) const
     if (!count.exec(QStringLiteral("SELECT COUNT(*) FROM user_user")) || !count.next()) {
         ErrorHandler::sqlFailure(count.lastError(), ErrorHandler::Category::Persistence,
                                  QStringLiteral("verify default accounts"));
-        setError(errorMessage, QStringLiteral("The default accounts could not be verified."));
+        setError(errorMessage, QStringLiteral("No se pudieron verificar las cuentas predeterminadas."));
         return false;
     }
     if (count.value(0).toLongLong() > 0)
@@ -142,7 +142,7 @@ bool AuthService::ensureDefaultUsers(QString *errorMessage) const
     if (!useTransaction) {
         ErrorHandler::sqlFailure(m_db.lastError(), ErrorHandler::Category::Persistence,
                                  QStringLiteral("start default accounts transaction"));
-        setError(errorMessage, QStringLiteral("The default accounts could not be created."));
+        setError(errorMessage, QStringLiteral("No se pudieron crear las cuentas predeterminadas."));
         return false;
     }
 
@@ -164,7 +164,7 @@ bool AuthService::ensureDefaultUsers(QString *errorMessage) const
                                      QStringLiteral("create default account"));
             if (useTransaction)
                 m_db.rollback();
-            setError(errorMessage, QStringLiteral("The default accounts could not be created."));
+            setError(errorMessage, QStringLiteral("No se pudieron crear las cuentas predeterminadas."));
             return false;
         }
 
@@ -173,10 +173,10 @@ bool AuthService::ensureDefaultUsers(QString *errorMessage) const
             ErrorHandler::failure(ErrorHandler::Category::Persistence,
                                   QStringLiteral("create default account"),
                                   QStringLiteral("Missing identity value after insert."),
-                                  QStringLiteral("The default accounts could not be created."));
+                                  QStringLiteral("No se pudieron crear las cuentas predeterminadas."));
             if (useTransaction)
                 m_db.rollback();
-            setError(errorMessage, QStringLiteral("The default accounts could not be created."));
+            setError(errorMessage, QStringLiteral("No se pudieron crear las cuentas predeterminadas."));
             return false;
         }
 
@@ -191,7 +191,7 @@ bool AuthService::ensureDefaultUsers(QString *errorMessage) const
                                      QStringLiteral("assign default account role"));
             if (useTransaction)
                 m_db.rollback();
-            setError(errorMessage, QStringLiteral("The default accounts could not be created."));
+            setError(errorMessage, QStringLiteral("No se pudieron crear las cuentas predeterminadas."));
             return false;
         }
     }
@@ -200,7 +200,7 @@ bool AuthService::ensureDefaultUsers(QString *errorMessage) const
         ErrorHandler::sqlFailure(m_db.lastError(), ErrorHandler::Category::Persistence,
                                  QStringLiteral("commit default accounts"));
         m_db.rollback();
-        setError(errorMessage, QStringLiteral("The default accounts could not be created."));
+        setError(errorMessage, QStringLiteral("No se pudieron crear las cuentas predeterminadas."));
         return false;
     }
     return true;

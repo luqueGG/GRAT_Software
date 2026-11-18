@@ -1,4 +1,4 @@
-#include "validator.h"
+﻿#include "validator.h"
 
 #include "core/crud/table_gateway.h"
 
@@ -38,9 +38,9 @@ QList<ValidationError> Validator::validate(const TableSpec &spec, const QVariant
         const bool requiredNow = c.required && !(c.type == ColumnType::Password && !isInsert);
         if (requiredNow) {
             if (isInsert && !present) {
-                errors.append({col, QStringLiteral("%1 is required.").arg(label)});
+                errors.append({col, QStringLiteral("%1 es obligatorio.").arg(label)});
             } else if (present && valStr.isEmpty()) {
-                errors.append({col, QStringLiteral("%1 is required.").arg(label)});
+                errors.append({col, QStringLiteral("%1 es obligatorio.").arg(label)});
             }
         }
 
@@ -50,7 +50,7 @@ QList<ValidationError> Validator::validate(const TableSpec &spec, const QVariant
         // --- Max length (Req 7.3) — text-like columns --------------------------
         if (c.maxLength > 0 && (c.type == ColumnType::Text || c.type == ColumnType::Password)) {
             if (valStr.length() > c.maxLength) {
-                errors.append({col, QStringLiteral("%1 exceeds the maximum length of %2 characters.")
+                errors.append({col, QStringLiteral("%1 supera la longitud máxima de %2 caracteres.")
                                     .arg(label).arg(c.maxLength)});
             }
         }
@@ -60,14 +60,14 @@ QList<ValidationError> Validator::validate(const TableSpec &spec, const QVariant
             bool ok = false;
             const double d = values.value(col).toDouble(&ok);
             if (ok && d < 0.0)
-                errors.append({col, QStringLiteral("%1 must not be negative.").arg(label)});
+                errors.append({col, QStringLiteral("%1 no debe ser negativo.").arg(label)});
         }
 
         // --- Email format (user_user.email) -----------------------------------
         if (col == QStringLiteral("email")) {
             static const QRegularExpression re(QStringLiteral("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"));
             if (!re.match(valStr).hasMatch())
-                errors.append({col, QStringLiteral("%1 is not a valid email address.").arg(label)});
+                errors.append({col, QStringLiteral("%1 no es una dirección de correo válida.").arg(label)});
         }
     }
 
@@ -76,7 +76,7 @@ QList<ValidationError> Validator::validate(const TableSpec &spec, const QVariant
         const QVariant pkVal = values.value(pkCol);
         if (!pkVal.isNull() && !pkVal.toString().isEmpty()) {
             if (m_gateway.exists(spec, pkVal))
-                errors.append({pkCol, QStringLiteral("A record with this identifier already exists.")});
+                errors.append({pkCol, QStringLiteral("Ya existe un registro con este identificador.")});
         }
     }
 
@@ -93,8 +93,8 @@ QList<ValidationError> Validator::validate(const TableSpec &spec, const QVariant
             && !constituent.isNull() && !constituent.toString().isEmpty()
             && m_gateway.constituentExists(waste, constituent, excluded)) {
             errors.append({QStringLiteral("id_constituent_id"),
-                           QStringLiteral("This constituent is already linked to this waste. "
-                                          "Edit or reactivate the existing row instead.")});
+                           QStringLiteral("Este componente ya está vinculado a este residuo. "
+                                          "Modifique o reactive la fila existente.")});
         }
     }
 

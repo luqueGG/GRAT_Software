@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>GRAT_Software — Sign In</string>
+   <string>GRAT_Software — Iniciar sesión</string>
   </property>
   <property name="modal">
    <bool>true</bool>
@@ -26,14 +26,14 @@
       </font>
      </property>
      <property name="text">
-      <string>Sign in to GRAT_Software</string>
+      <string>Iniciar sesión en GRAT_Software</string>
      </property>
     </widget>
    </item>
    <item>
     <widget class="QLabel" name="subtitleLabel">
      <property name="text">
-      <string>Responsible Management of Transport Waste</string>
+      <string>Gestión Responsable de Residuos de Transporte</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -61,21 +61,21 @@
      <item row="0" column="0">
       <widget class="QLabel" name="usernameLabel">
        <property name="text">
-        <string>Username:</string>
+        <string>Usuario:</string>
        </property>
       </widget>
      </item>
      <item row="0" column="1">
       <widget class="QLineEdit" name="usernameEdit">
        <property name="placeholderText">
-        <string>Username</string>
+        <string>Usuario</string>
        </property>
       </widget>
      </item>
      <item row="1" column="0">
       <widget class="QLabel" name="passwordLabel">
        <property name="text">
-        <string>Password:</string>
+        <string>Contraseña:</string>
        </property>
       </widget>
      </item>
@@ -85,7 +85,7 @@
         <enum>QLineEdit::Password</enum>
        </property>
        <property name="placeholderText">
-        <string>Password</string>
+        <string>Contraseña</string>
        </property>
       </widget>
      </item>

@@ -40,6 +40,7 @@ add_executable(grat_software
     src/ui/master_detail_widget.cpp
     src/ui/admin_roles_widget.cpp
     src/ui/visual_icons.cpp
+    src/ui/visual_text.cpp
     resources/grat_schema.qrc
     resources/grat_resources.qrc
 )

@@ -22,6 +22,7 @@
 #include "core/errors/error_handler.h"
 #include "ui/register_form.h"
 #include "ui/visual_icons.h"
+#include "ui/visual_text.h"
 
 namespace {
 
@@ -30,10 +31,10 @@ QString childTitle(const QString &table)
 {
     static const QHash<QString, QString> titles = {
         {QStringLiteral("waste_wasteconstituent"), QStringLiteral("Constituents")},
-        {QStringLiteral("transfer_transfertravelcompany"), QStringLiteral("Transport Legs")},
+        {QStringLiteral("transfer_transfertravelcompany"), QStringLiteral("Tramos de transporte")},
         {QStringLiteral("user_user_groups"), QStringLiteral("Roles")},
-        {QStringLiteral("user_user_user_permissions"), QStringLiteral("Extra Permissions")},
-        {QStringLiteral("auth_group_permissions"), QStringLiteral("Permissions")},
+        {QStringLiteral("user_user_user_permissions"), QStringLiteral("Permisos adicionales")},
+        {QStringLiteral("auth_group_permissions"), QStringLiteral("Permisos")},
     };
     return titles.value(table, table);
 }
@@ -93,18 +94,18 @@ MasterDetailWidget::MasterDetailWidget(Database &database, const ChildTableSpec 
         button->setIconSize(QSize(16, 16));
         return button;
     };
-    m_addButton = makeButton(tr("Add"), QStringLiteral("detailAddButton"), QStringLiteral("add_light"));
-    m_editButton = makeButton(tr("Edit"), QStringLiteral("detailEditButton"), QStringLiteral("edit_light"));
+    m_addButton = makeButton(tr("Agregar"), QStringLiteral("detailAddButton"), QStringLiteral("add_light"));
+    m_editButton = makeButton(tr("Editar"), QStringLiteral("detailEditButton"), QStringLiteral("edit_light"));
     // Rows with a lifecycle are deleted logically; plain link rows are removed.
-    m_removeButton = makeButton(m_child.hasState ? tr("Delete") : tr("Remove"),
+    m_removeButton = makeButton(m_child.hasState ? tr("Eliminar") : tr("Quitar"),
                                 QStringLiteral("detailRemoveButton"), QStringLiteral("delete"));
     m_inactivateButton = makeButton(tr("Inactivate"), QStringLiteral("detailInactivateButton"), QStringLiteral("state"));
     m_reactivateButton = makeButton(tr("Reactivate"), QStringLiteral("detailReactivateButton"), QStringLiteral("state"));
-    m_saveButton = makeButton(tr("Save"), QStringLiteral("detailSaveButton"), QStringLiteral("refresh_light"));
-    m_cancelButton = makeButton(tr("Cancel"), QStringLiteral("detailCancelButton"), QStringLiteral("cancel"));
+    m_saveButton = makeButton(tr("Guardar"), QStringLiteral("detailSaveButton"), QStringLiteral("refresh_light"));
+    m_cancelButton = makeButton(tr("Cancelar"), QStringLiteral("detailCancelButton"), QStringLiteral("cancel"));
     if (isRolePermissions()) {
-        m_addButton->setText(tr("Grant"));
-        m_removeButton->setText(tr("Revoke"));
+        m_addButton->setText(tr("Otorgar"));
+        m_removeButton->setText(tr("Revocar"));
         m_removeButton->setIcon(VisualIcons::icon(QStringLiteral("revoke")));
         m_editButton->hide();
     }
@@ -182,9 +183,9 @@ void MasterDetailWidget::setParentKey(const QVariant &key)
     m_parentKey = hasParent ? key : QVariant();
 
     m_hintLabel->setText(hasParent
-                             ? (isRolePermissions() ? tr("Permissions assigned to the selected role.")
-                                                    : tr("Rows linked to the selected record."))
-                             : tr("Select a saved record above to see its %1.")
+                             ? (isRolePermissions() ? tr("Permisos asignados al rol seleccionado.")
+                                                    : tr("Filas vinculadas al registro seleccionado."))
+                             : tr("Seleccione un registro guardado arriba para ver sus %1.")
                                    .arg(title().toLower()));
     setEnabled(hasParent);
     refresh();
@@ -213,8 +214,8 @@ void MasterDetailWidget::refresh()
         // Keep the contextual hint visible while rows load; replace it only with
         // a safe load error below.
         m_hintLabel->setText(isRolePermissions()
-                                 ? tr("Permissions assigned to the selected role.")
-                                 : tr("Rows linked to the selected record."));
+                                 ? tr("Permisos asignados al rol seleccionado.")
+                                 : tr("Filas vinculadas al registro seleccionado."));
 
         loadReferenceLabels();
 
@@ -365,8 +366,8 @@ void MasterDetailWidget::startEdit()
         return;
 
     if (m_selectedRow < 0) {
-        QMessageBox::information(this, tr("Edit %1").arg(title()),
-                                 tr("Select a row in the list first."));
+        QMessageBox::information(this, tr("Editar %1").arg(title()),
+                                 tr("Seleccione primero una fila de la lista."));
         return;
     }
 
@@ -392,9 +393,9 @@ void MasterDetailWidget::removeRow()
     }
 
     const auto answer = QMessageBox::question(
-        this, isRolePermissions() ? tr("Revoke Permission") : tr("Remove %1").arg(title()),
-        isRolePermissions() ? tr("Revoke the selected permission from this role?")
-                            : tr("Remove the selected row? This link will be deleted permanently."));
+        this, isRolePermissions() ? tr("Revocar permiso") : tr("Quitar %1").arg(title()),
+        isRolePermissions() ? tr("¿Revocar el permiso seleccionado de este rol?")
+                            : tr("¿Quitar la fila seleccionada? Este vínculo se eliminará permanentemente."));
     if (answer != QMessageBox::Yes || !allowed(PermissionAction::Change))
         return;
 
@@ -403,7 +404,7 @@ void MasterDetailWidget::removeRow()
         ? m_gateway.revokeRolePermission(m_session, m_parentKey, linkKey)
         : m_gateway.removeChild(m_child, m_parentKey, linkKey);
     if (!result.success) {
-        QMessageBox::critical(this, tr("Operation failed"), result.error);
+        QMessageBox::critical(this, tr("Operación fallida"), result.error);
         return;
     }
     refresh();
@@ -423,7 +424,7 @@ void MasterDetailWidget::applyState(const QString &newState)
     const DbResult result = m_gateway.setChildState(
         m_child, m_parentKey, currentRecord().value(QStringLiteral("id")), newState);
     if (!result.success) {
-        QMessageBox::critical(this, tr("Operation failed"), result.error);
+        QMessageBox::critical(this, tr("Operación fallida"), result.error);
         return;
     }
     refresh();
@@ -440,9 +441,9 @@ void MasterDetailWidget::save()
         return;
 
     if (m_operation == Operation::Idle) {
-        QMessageBox::information(this, tr("Save %1").arg(title()),
-                                 tr("There is no pending change to save. "
-                                    "Choose Add or Edit first."));
+        QMessageBox::information(this, tr("Guardar %1").arg(title()),
+                                 tr("No hay cambios pendientes por guardar. "
+                                    "Elija Agregar o Editar primero."));
         return;
     }
 
@@ -463,7 +464,7 @@ void MasterDetailWidget::save()
         for (const ValidationError &error : errors)
             details << QStringLiteral("• %1").arg(error.reason);
         QMessageBox::warning(this, tr("Validation failed"),
-                             tr("Please correct the following fields:\n\n%1")
+                             tr("Corrija los siguientes campos:\n\n%1")
                                  .arg(details.join(QLatin1Char('\n'))));
         return;
     }
@@ -480,7 +481,7 @@ void MasterDetailWidget::save()
             : m_gateway.updateChild(m_child, m_parentKey, currentRecord().value(QStringLiteral("id")), values);
     }
     if (!result.success) {
-        QMessageBox::critical(this, tr("Save failed"), result.error);
+        QMessageBox::critical(this, tr("Guardado fallido"), result.error);
         return;
     }
 
@@ -551,13 +552,17 @@ void MasterDetailWidget::loadReferenceLabels()
         if (column.type != ColumnType::Fk || !column.refTable || !column.refPk)
             continue;
 
+        const QString refTable = QString::fromLatin1(column.refTable);
+        const QString refDisplay = column.refDisplay
+            ? QString::fromLatin1(column.refDisplay)
+            : QString();
         const QList<RefValue> values = m_gateway.loadRefValues(
-            QString::fromLatin1(column.refTable), QString::fromLatin1(column.refPk),
-            column.refDisplay ? QString::fromLatin1(column.refDisplay) : QString());
+            refTable, QString::fromLatin1(column.refPk), refDisplay);
 
         QHash<QString, QString> labels;
         for (const RefValue &value : values)
-            labels.insert(value.pk.toString(), value.text);
+            labels.insert(value.pk.toString(),
+                          VisualText::referenceLabel(refTable, refDisplay, value.text));
         m_refLabels.insert(QString::fromLatin1(column.dbColumn), labels);
     }
 }
@@ -582,10 +587,10 @@ QString MasterDetailWidget::displayValue(const ColumnSpec &column, const QVarian
 QString MasterDetailWidget::stateText(const QString &state) const
 {
     if (state == QLatin1String("A"))
-        return tr("Active");
+        return tr("Activo");
     if (state == QLatin1String("I"))
-        return tr("Inactive");
+        return tr("Inactivo");
     if (state == QLatin1String("*"))
-        return tr("Deleted");
+        return tr("Eliminado");
     return state;
 }

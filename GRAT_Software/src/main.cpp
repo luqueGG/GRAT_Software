@@ -1,6 +1,6 @@
 // GRAT_Software — entry point.
 // Responsible Management of Transport Waste (Gestión Responsable de Residuos de
-// Transporte). The application UI is entirely in English.
+// Transporte). La interfaz de la aplicación está completamente en español.
 //
 // Establishes the SQLite database connection on startup (Req 8.1); if the
 // connection cannot be established, the operator is notified and the app exits
@@ -67,9 +67,9 @@ int main(int argc, char *argv[])
     if (!database.open()) {
         QMessageBox::critical(
             nullptr,
-            QStringLiteral("GRAT_Software — Database Error"),
-            QStringLiteral("Could not connect to the database.\n\n%1\n\n"
-                          "The application will now close.")
+            QStringLiteral("GRAT_Software — Error de base de datos"),
+            QStringLiteral("No se pudo conectar con la base de datos.\n\n%1\n\n"
+                          "La aplicación se cerrará.")
                 .arg(database.lastError()));
         return 1;
     }
