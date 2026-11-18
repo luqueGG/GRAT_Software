@@ -69,6 +69,7 @@ PRAGMA foreign_key_check;
 |---|---|---|---|---|
 | Catálogo de permisos (`auth_permission`) | 43 | 43 | ✅ | `SELECT COUNT(*)` = 43 |
 | Permisos efectivos de `admin` (Administrator) | 43 | 43 | ✅ | id=1, `is_active='A'`, grupo Administrator con 43 |
+| Permisos efectivos de `operator` (Operator) | 19 | 19 | ✅ | id=3, `is_active='A'`, grupo Operator con 19, sin permisos directos |
 | Los 3 usuarios sembrados están activos | `A` en los 3 | `A`, `A`, `A` | ✅ | `user_user.is_active` |
 | Integridad referencial | Sin violaciones | `PRAGMA foreign_key_check` vacío | ✅ | `integrity_check` = `ok` |
 | `PRAGMA foreign_keys` | ON en conexiones de la app | 0 en sesión SQL cruda; 1 tras `PRAGMA foreign_keys = ON` | ✅ | La app lo activa por conexión; SQLite lo desactiva por defecto en una conexión nueva |
@@ -93,6 +94,7 @@ usuarios: 3
 (3, 'operator', 'A', 0, 0, 97)
 
 admin        id=1 superuser=1 permisos_efectivos=43
+operator     id=3 superuser=0 permisos_efectivos=19
 permisos directos: 0
 PRAGMA foreign_key_check: sin violaciones
 integrity_check: ok
