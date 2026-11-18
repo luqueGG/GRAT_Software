@@ -8,6 +8,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QSize>
 #include <QStackedWidget>
 #include <QStatusBar>
 #include <QTimer>
@@ -20,6 +21,7 @@
 #include "core/db/database.h"
 #include "ui/crud_widget.h"
 #include "ui/admin_roles_widget.h"
+#include "ui/visual_icons.h"
 #include "ui_main_window.h"
 
 namespace {
@@ -48,6 +50,8 @@ MainWindow::MainWindow(Database &database, const AuthSession &session, QWidget *
     , m_session(session)
 {
     m_ui->setupUi(this);
+
+    m_ui->navigationTree->setIconSize(QSize(18, 18));
 
     m_dbStatusLabel = new QLabel(this);
     m_userLabel = new QLabel(this);
@@ -135,6 +139,7 @@ void MainWindow::buildNavigation()
     for (const ModuleDef &module : kModules) {
         auto *moduleItem = new QTreeWidgetItem(m_ui->navigationTree);
         moduleItem->setText(0, moduleTitle(QString::fromLatin1(module.key)));
+        moduleItem->setIcon(0, VisualIcons::moduleIcon(QString::fromLatin1(module.key)));
         moduleItem->setFlags(moduleItem->flags() & ~Qt::ItemIsSelectable);
         QFont moduleFont = moduleItem->font(0);
         moduleFont.setBold(true);
@@ -150,6 +155,7 @@ void MainWindow::buildNavigation()
             auto *item = new QTreeWidgetItem(moduleItem);
             const QString table = QString::fromLatin1(spec.table);
             item->setText(0, tableTitle(table));
+            item->setIcon(0, VisualIcons::moduleIcon(QString::fromLatin1(spec.module)));
             item->setData(0, Qt::UserRole, table);
             m_navigationItems.insert(table, item);
             ++visibleTables;
