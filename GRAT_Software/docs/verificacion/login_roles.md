@@ -104,20 +104,20 @@ integrity_check: ok
 
 ## Pruebas manuales (interfaz gráfica)
 
-Estas filas se completan tras ejecutar la app de escritorio y adjuntar capturas en
-`docs/verificacion/capturas/`.
+Ejecutadas el **2026-11-18** sobre `db/grat.db` (build `build/grat_software`,
+WSLg). Capturas en `docs/verificacion/capturas/`.
 
 | Caso | Esperado | Obtenido | Estado | Evidencia |
 |---|---|---|---|---|
-| Login correcto de `admin` + árbol de navegación y barra de estado | Acceso total, 43 permisos | — | ⏳ manual | — |
-| Login correcto de `supervisor` | 36 permisos, módulos permitidos | — | ⏳ manual | — |
-| Login correcto de `operator` | 19 permisos, módulos permitidos | — | ⏳ manual | — |
+| Login correcto de `admin` + árbol de navegación y barra de estado | Acceso total, 43 permisos | Ventana `GRAT_Software — admin`; 6 módulos, incluido Admin → Roles; barra: `● DB connected`, `User: admin`, `Role(s): Administrator` | ✅ | `capturas/01-admin-nav.png` |
+| Login correcto de `supervisor` | 36 permisos, módulos permitidos | Ventana `GRAT_Software — supervisor`; 5 módulos (sin Admin), 12 tablas con User → Users; `User: supervisor`, `Role(s): Supervisor` | ✅ | `capturas/02-supervisor-nav.png` |
+| Login correcto de `operator` | 19 permisos, módulos permitidos | Ventana `GRAT_Software — operator`; 4 módulos (sin User ni Admin), 11 tablas; `User: operator`, `Role(s): Operator` | ✅ | `capturas/03-operator-botones.png` |
 | Contraseña incorrecta | Rechazo con mensaje genérico | — | ⏳ manual | — |
 | Usuario inexistente | Rechazo con el mismo mensaje genérico | — | ⏳ manual | — |
 | Campos vacíos | Rechazo sin consultar la BD | — | ⏳ manual | — |
 | Usuario inactivo (`is_active='I'`) | Rechazo con mensaje genérico | — | ⏳ manual | — |
 | Mensajes de error sin SQL ni nombres de tablas | Sin detalles internos | — | ⏳ manual | — |
-| Botones deshabilitados según el rol | Solo acciones permitidas | — | ⏳ manual | — |
+| Botones deshabilitados según el rol | Solo acciones permitidas | `operator` en Location → Countries: `Add`, `Modify`, `Delete`, `Inactivate`, `Reactivate` y `Update` deshabilitados (solo tiene `view_country`) | ✅ | `capturas/03-operator-botones.png` |
 
 ## Observaciones
 
