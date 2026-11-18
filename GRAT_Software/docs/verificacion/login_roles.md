@@ -112,8 +112,8 @@ WSLg). Capturas en `docs/verificacion/capturas/`.
 | Login correcto de `admin` + árbol de navegación y barra de estado | Acceso total, 43 permisos | Ventana `GRAT_Software — admin`; 6 módulos, incluido Admin → Roles; barra: `● DB connected`, `User: admin`, `Role(s): Administrator` | ✅ | `capturas/01-admin-nav.png` |
 | Login correcto de `supervisor` | 36 permisos, módulos permitidos | Ventana `GRAT_Software — supervisor`; 5 módulos (sin Admin), 12 tablas con User → Users; `User: supervisor`, `Role(s): Supervisor` | ✅ | `capturas/02-supervisor-nav.png` |
 | Login correcto de `operator` | 19 permisos, módulos permitidos | Ventana `GRAT_Software — operator`; 4 módulos (sin User ni Admin), 11 tablas; `User: operator`, `Role(s): Operator` | ✅ | `capturas/03-operator-botones.png` |
-| Contraseña incorrecta | Rechazo con mensaje genérico | — | ⏳ manual | — |
-| Usuario inexistente | Rechazo con el mismo mensaje genérico | — | ⏳ manual | — |
+| Contraseña incorrecta | Rechazo con mensaje genérico | `admin` con clave errónea: `Invalid username or password.` en rojo; el diálogo permanece abierto y se limpia el campo de contraseña | ✅ | `capturas/04-contraseñaIncorrecta.png` |
+| Usuario inexistente | Rechazo con el mismo mensaje genérico | Usuario `pepito`: mismo texto `Invalid username or password.` (no distingue de clave incorrecta) | ✅ | `capturas/05-usuario-inexistente.png` |
 | Campos vacíos | Rechazo sin consultar la BD | — | ⏳ manual | — |
 | Usuario inactivo (`is_active='I'`) | Rechazo con mensaje genérico | — | ⏳ manual | — |
 | Mensajes de error sin SQL ni nombres de tablas | Sin detalles internos | — | ⏳ manual | — |
