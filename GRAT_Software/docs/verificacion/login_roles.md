@@ -115,7 +115,7 @@ WSLg). Capturas en `docs/verificacion/capturas/`.
 | Contraseña incorrecta | Rechazo con mensaje genérico | `admin` con clave errónea: `Invalid username or password.` en rojo; el diálogo permanece abierto y se limpia el campo de contraseña | ✅ | `capturas/04-contraseñaIncorrecta.png` |
 | Usuario inexistente | Rechazo con el mismo mensaje genérico | Usuario `pepito`: mismo texto `Invalid username or password.` (no distingue de clave incorrecta) | ✅ | `capturas/05-usuario-inexistente.png` |
 | Campos vacíos | Rechazo sin consultar la BD | Usuario y contraseña vacíos: `Enter your username and password.` | ✅ | `capturas/06-campos-vacios.png` |
-| Usuario inactivo (`is_active='I'`) | Rechazo con mensaje genérico | — | ⏳ manual | — |
+| Usuario inactivo (`is_active='I'`) | Rechazo con mensaje genérico | Con `operator` en `is_active='I'`: `Invalid username or password.`, idéntico al de usuario inexistente; la BD se restauró después desde la copia de seguridad | ✅ | `capturas/07-usuario-inactivo.png` |
 | Mensajes de error sin SQL ni nombres de tablas | Sin detalles internos | — | ⏳ manual | — |
 | Botones deshabilitados según el rol | Solo acciones permitidas | `operator` en Location → Countries: `Add`, `Modify`, `Delete`, `Inactivate`, `Reactivate` y `Update` deshabilitados (solo tiene `view_country`) | ✅ | `capturas/03-operator-botones.png` |
 
@@ -125,4 +125,8 @@ WSLg). Capturas en `docs/verificacion/capturas/`.
   `auth_group_permissions`, no por un atajo de `is_superuser` en
   `AuthService::loadPermissions`; el conteo coincide igualmente con lo esperado.
 - `auth_group_permissions` contiene 98 filas (43 + 36 + 19).
-- Pendiente de comprobar en la interfaz: las filas marcadas `⏳ manual`.
+- Los tres logins manuales actualizaron `user_user.last_login` en `db/grat.db`,
+  lo que confirma que la autenticación escribe en la base de datos real.
+- Para la prueba de usuario inactivo se marcó `operator` como `is_active='I'` y,
+  al terminar, se restauró `db/grat.db` desde `db/grat.db.bak`; los tres usuarios
+  de desarrollo quedaron activos de nuevo.
