@@ -10,6 +10,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDialog>
+#include <QFile>
 #include <QMessageBox>
 
 #include <exception>
@@ -55,6 +56,12 @@ int main(int argc, char *argv[])
     GuardedApplication app(argc, argv);
     app.setApplicationName("GRAT_Software");
     app.setOrganizationName("GRAT");
+
+    // Visual theme only: the stylesheet is compiled into the binary as a Qt
+    // resource, so no runtime files or paths are required.
+    QFile styleFile(QStringLiteral(":/grat_theme.qss"));
+    if (styleFile.open(QIODevice::ReadOnly | QIODevice::Text))
+        app.setStyleSheet(QString::fromUtf8(styleFile.readAll()));
 
     Database database;
     if (!database.open()) {
