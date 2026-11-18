@@ -14,6 +14,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QSize>
 #include <QSplitter>
 #include <QStandardItem>
 #include <QStandardItemModel>
@@ -29,6 +30,7 @@
 #include "core/errors/error_handler.h"
 #include "ui/master_detail_widget.h"
 #include "ui/register_form.h"
+#include "ui/visual_icons.h"
 
 CrudWidget::CrudWidget(Database &database, const TableSpec &spec,
                        const AuthSession &session, const QString &title,
@@ -88,18 +90,20 @@ CrudWidget::CrudWidget(Database &database, const TableSpec &spec,
     lowerLayout->addWidget(formScroll, 1);
 
     auto *buttonLayout = new QHBoxLayout();
-    auto makeButton = [this](const QString &text, const QString &name) {
+    auto makeButton = [this](const QString &text, const QString &name, const QString &iconKey) {
         auto *button = new QPushButton(text, this);
         button->setObjectName(name);
+        button->setIcon(VisualIcons::icon(iconKey));
+        button->setIconSize(QSize(16, 16));
         return button;
     };
-    m_addButton = makeButton(tr("Add"), QStringLiteral("addButton"));
-    m_modifyButton = makeButton(tr("Modify"), QStringLiteral("modifyButton"));
-    m_deleteButton = makeButton(tr("Delete"), QStringLiteral("deleteButton"));
-    m_inactivateButton = makeButton(tr("Inactivate"), QStringLiteral("inactivateButton"));
-    m_reactivateButton = makeButton(tr("Reactivate"), QStringLiteral("reactivateButton"));
-    m_updateButton = makeButton(tr("Update"), QStringLiteral("updateButton"));
-    m_cancelButton = makeButton(tr("Cancel"), QStringLiteral("cancelButton"));
+    m_addButton = makeButton(tr("Add"), QStringLiteral("addButton"), QStringLiteral("add_light"));
+    m_modifyButton = makeButton(tr("Modify"), QStringLiteral("modifyButton"), QStringLiteral("edit_light"));
+    m_deleteButton = makeButton(tr("Delete"), QStringLiteral("deleteButton"), QStringLiteral("delete"));
+    m_inactivateButton = makeButton(tr("Inactivate"), QStringLiteral("inactivateButton"), QStringLiteral("state"));
+    m_reactivateButton = makeButton(tr("Reactivate"), QStringLiteral("reactivateButton"), QStringLiteral("state"));
+    m_updateButton = makeButton(tr("Update"), QStringLiteral("updateButton"), QStringLiteral("refresh_light"));
+    m_cancelButton = makeButton(tr("Cancel"), QStringLiteral("cancelButton"), QStringLiteral("cancel"));
 
     connect(m_addButton, &QPushButton::clicked, this, &CrudWidget::startAdd);
     connect(m_modifyButton, &QPushButton::clicked, this, &CrudWidget::startModify);

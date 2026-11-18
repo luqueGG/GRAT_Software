@@ -42,17 +42,20 @@ RegisterForm::RegisterForm(const TableSpec &spec, TableGateway &gateway,
         field.column = &column;
 
         const QString label = QString::fromLatin1(column.label);
+        auto *labelWidget = new QLabel(label, this);
+        labelWidget->setProperty("fieldLabel", true);
+
         if (column.type == ColumnType::State) {
             auto *badge = new QLabel(this);
             badge->setObjectName(QStringLiteral("field_") + QString::fromLatin1(column.dbColumn));
             field.widget = badge;
             field.stateLabel = badge;
-            m_layout->addRow(label, badge);
+            m_layout->addRow(labelWidget, badge);
         } else {
             QWidget *input = createField(column);
             field.widget = input;
             field.combo = qobject_cast<QComboBox *>(input);
-            m_layout->addRow(label, input);
+            m_layout->addRow(labelWidget, input);
         }
 
         m_fields.append(field);

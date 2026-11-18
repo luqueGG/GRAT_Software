@@ -10,6 +10,7 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QSize>
 #include <QStandardItem>
 #include <QStandardItemModel>
 #include <QStringList>
@@ -20,6 +21,7 @@
 #include "core/db/database.h"
 #include "core/errors/error_handler.h"
 #include "ui/register_form.h"
+#include "ui/visual_icons.h"
 
 namespace {
 
@@ -84,23 +86,26 @@ MasterDetailWidget::MasterDetailWidget(Database &database, const ChildTableSpec 
     editor->addWidget(m_form);
     editor->addStretch();
 
-    auto makeButton = [this](const QString &text, const QString &name) {
+    auto makeButton = [this](const QString &text, const QString &name, const QString &iconKey) {
         auto *button = new QPushButton(text, this);
         button->setObjectName(name);
+        button->setIcon(VisualIcons::icon(iconKey));
+        button->setIconSize(QSize(16, 16));
         return button;
     };
-    m_addButton = makeButton(tr("Add"), QStringLiteral("detailAddButton"));
-    m_editButton = makeButton(tr("Edit"), QStringLiteral("detailEditButton"));
+    m_addButton = makeButton(tr("Add"), QStringLiteral("detailAddButton"), QStringLiteral("add_light"));
+    m_editButton = makeButton(tr("Edit"), QStringLiteral("detailEditButton"), QStringLiteral("edit_light"));
     // Rows with a lifecycle are deleted logically; plain link rows are removed.
     m_removeButton = makeButton(m_child.hasState ? tr("Delete") : tr("Remove"),
-                                QStringLiteral("detailRemoveButton"));
-    m_inactivateButton = makeButton(tr("Inactivate"), QStringLiteral("detailInactivateButton"));
-    m_reactivateButton = makeButton(tr("Reactivate"), QStringLiteral("detailReactivateButton"));
-    m_saveButton = makeButton(tr("Save"), QStringLiteral("detailSaveButton"));
-    m_cancelButton = makeButton(tr("Cancel"), QStringLiteral("detailCancelButton"));
+                                QStringLiteral("detailRemoveButton"), QStringLiteral("delete"));
+    m_inactivateButton = makeButton(tr("Inactivate"), QStringLiteral("detailInactivateButton"), QStringLiteral("state"));
+    m_reactivateButton = makeButton(tr("Reactivate"), QStringLiteral("detailReactivateButton"), QStringLiteral("state"));
+    m_saveButton = makeButton(tr("Save"), QStringLiteral("detailSaveButton"), QStringLiteral("refresh_light"));
+    m_cancelButton = makeButton(tr("Cancel"), QStringLiteral("detailCancelButton"), QStringLiteral("cancel"));
     if (isRolePermissions()) {
         m_addButton->setText(tr("Grant"));
         m_removeButton->setText(tr("Revoke"));
+        m_removeButton->setIcon(VisualIcons::icon(QStringLiteral("revoke")));
         m_editButton->hide();
     }
     m_inactivateButton->setVisible(m_child.hasState);
