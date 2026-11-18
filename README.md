@@ -5,6 +5,15 @@ Aplicación de escritorio para la gestión responsable de residuos de transporte
 Catalog, User, Waste, Transfer y Admin mediante pantallas CRUD generadas a partir
 de metadatos, con autenticación y control de acceso basado en permisos (RBAC).
 
+## Integrantes
+
+- Jhon Cuyo
+- Wilber Guerra
+- Gerson Luque
+- Diego Santa
+- Jaime Igreda
+- Cristhian Bravo
+
 ## Stack
 
 - **C++20**
@@ -130,9 +139,7 @@ nunca se guarda.
 
 ## Flujo de trabajo del equipo
 
-- Una rama por persona: `feature/<nombre>`.
-- Commits cortos, en español y en infinitivo/presente.
-- Un commit por actividad completada.
+- Una rama por persona: `feature/`.
 - No se versionan `build/`, `db/`, los archivos `*.db` ni `.kiro/`.
 
 ## Verificación
@@ -145,10 +152,3 @@ Los resultados de verificación están en
 - `build_warnings.md` — clasificación de warnings.
 - `capturas/` — capturas de las pruebas de interfaz.
 
-## Equipo
-
-- (completar nombres)
-- (completar nombres)
-- (completar nombres)
-- (completar nombres)
-- (completar nombres)
