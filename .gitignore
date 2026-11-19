@@ -1,2 +1,64 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Linker and Debugger files
+*.ilk
+*.pdb
+*.dwo
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Build directories & CMake outputs
+build/
+out/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+Testing/
+
+# Package managers & caches
+vcpkg_installed/
+.cache/
+
+# Common IDE & OS files
+.vscode/
+.vs/
+.idea/
+*.user
+*.suo
+*.swp
+.DS_Store
+Thumbs.db
 # Spec & steering files are not application source
 /.kiro/
+db/
