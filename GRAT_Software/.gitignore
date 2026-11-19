@@ -1,5 +1,0 @@
-# Build output
-/build/
-
-# Local SQLite database file(s)
-/db/
