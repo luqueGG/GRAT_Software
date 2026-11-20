@@ -68,6 +68,11 @@ target_link_libraries(grat_core PUBLIC
     Qt6::Sql
 )
 
+target_compile_options(grat_core PRIVATE
+    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall -Wextra>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4>
+)
+
 # --- Application target: executable with UI, main and resources ---
 add_executable(grat_software
     src/main.cpp
@@ -100,6 +105,11 @@ target_link_libraries(grat_software PRIVATE
     Qt6::Widgets
     Qt6::Sql
     Qt6::Svg
+)
+
+target_compile_options(grat_software PRIVATE
+    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall -Wextra>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4>
 )
 
 # Install defaults (optional, harmless if unused)

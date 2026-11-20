@@ -38,6 +38,8 @@
 
 # Build directories & CMake outputs
 build/
+build-rubrica/
+build-rubrica-app/
 out/
 CMakeFiles/
 CMakeCache.txt
