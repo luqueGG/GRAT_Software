@@ -54,3 +54,4 @@ function(grat_add_core_test name)
 endfunction()
 
 grat_add_core_test(test_core_fixtures test_core_fixtures.cpp)
+grat_add_core_test(test_validator test_validator.cpp)
