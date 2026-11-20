@@ -39,6 +39,8 @@ add_executable(grat_software
     src/ui/crud_widget.cpp
     src/ui/master_detail_widget.cpp
     src/ui/admin_roles_widget.cpp
+    src/ui/reports/reports_widget.cpp
+    src/core/reports/report_service.cpp
     src/ui/visual_icons.cpp
     src/ui/visual_text.cpp
     resources/grat_schema.qrc
@@ -55,3 +57,11 @@ target_link_libraries(grat_software PRIVATE
 
 # Install defaults (optional, harmless if unused)
 install(TARGETS grat_software DESTINATION bin)
+
+# Optional test infrastructure (P6). Only requires Qt Test when enabled.
+option(BUILD_TESTING "Build the test suites" OFF)
+if(BUILD_TESTING)
+    find_package(Qt6 REQUIRED COMPONENTS Test)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
