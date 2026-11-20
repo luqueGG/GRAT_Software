@@ -10,7 +10,10 @@
 #include <QString>
 #include <QVariantMap>
 
+#include <memory>
+
 #include "core/crud/table_spec.h"
+#include "core/crud/validation/i_validation_lookup.h"
 
 class TableGateway;
 
@@ -24,7 +27,19 @@ struct ValidationError
 class Validator
 {
 public:
+    // Owns an adapter that borrows gateway; gateway must outlive this Validator.
     explicit Validator(const TableGateway &gateway);
+    Validator(const TableGateway &&) = delete;
+
+    // Borrows an existing lookup, which must outlive this Validator.
+    explicit Validator(const IValidationLookup &lookup);
+    Validator(const IValidationLookup &&) = delete;
+
+    // Keep the lookup binding fixed, including when it refers to the owned adapter.
+    Validator(const Validator &) = delete;
+    Validator &operator=(const Validator &) = delete;
+    Validator(Validator &&) = delete;
+    Validator &operator=(Validator &&) = delete;
 
     // Validate the provided values for a table.
     // isInsert=true  → required fields must be present; natural-PK uniqueness checked.
@@ -34,5 +49,6 @@ public:
                                    const QVariantMap &currentRecord = {}) const;
 
 private:
-    const TableGateway &m_gateway;
+    std::unique_ptr<const IValidationLookup> m_ownedLookup;
+    const IValidationLookup &m_lookup;
 };

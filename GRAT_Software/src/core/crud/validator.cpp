@@ -1,12 +1,18 @@
 #include "validator.h"
 
-#include "core/crud/table_gateway.h"
+#include "core/crud/validation/table_gateway_validation_lookup.h"
 
 #include <QRegularExpression>
 #include <QVariant>
 
 Validator::Validator(const TableGateway &gateway)
-    : m_gateway(gateway)
+    : m_ownedLookup(std::make_unique<TableGatewayValidationLookup>(gateway))
+    , m_lookup(*m_ownedLookup)
+{
+}
+
+Validator::Validator(const IValidationLookup &lookup)
+    : m_lookup(lookup)
 {
 }
 
@@ -75,8 +81,11 @@ QList<ValidationError> Validator::validate(const TableSpec &spec, const QVariant
     if (isInsert && !spec.identityPk) {
         const QVariant pkVal = values.value(pkCol);
         if (!pkVal.isNull() && !pkVal.toString().isEmpty()) {
-            if (m_gateway.exists(spec, pkVal))
+            const auto result = m_lookup.exists(spec, pkVal);
+            if (result == ValidationLookupResult::Found)
                 errors.append({pkCol, QStringLiteral("Ya existe un registro con este identificador.")});
+            else if (result == ValidationLookupResult::QueryError)
+                errors.append({pkCol, QStringLiteral("No se pudo verificar el identificador.")});
         }
     }
 
@@ -90,11 +99,16 @@ QList<ValidationError> Validator::validate(const TableSpec &spec, const QVariant
         const QVariant constituent = effectiveValues.value(QStringLiteral("id_constituent_id"));
         const QVariant excluded = isInsert ? QVariant() : currentRecord.value(pkCol);
         if (!waste.isNull() && !waste.toString().isEmpty()
-            && !constituent.isNull() && !constituent.toString().isEmpty()
-            && m_gateway.constituentExists(waste, constituent, excluded)) {
-            errors.append({QStringLiteral("id_constituent_id"),
-                           QStringLiteral("Este componente ya esta vinculado a este residuo. "
-                                          "Modifique o reactive la fila existente.")});
+            && !constituent.isNull() && !constituent.toString().isEmpty()) {
+            const auto result = m_lookup.constituentExists(waste, constituent, excluded);
+            if (result == ValidationLookupResult::Found) {
+                errors.append({QStringLiteral("id_constituent_id"),
+                               QStringLiteral("Este componente ya esta vinculado a este residuo. "
+                                              "Modifique o reactive la fila existente.")});
+            } else if (result == ValidationLookupResult::QueryError) {
+                errors.append({QStringLiteral("id_constituent_id"),
+                               QStringLiteral("No se pudo verificar el vinculo del componente.")});
+            }
         }
     }
 
