@@ -51,6 +51,17 @@ DbResult sqlFailureResult(const QSqlError &error, const QString &operation,
     return {false, failure.message, {}, failure.category};
 }
 
+ValidationLookupResult existenceResult(QSqlQuery &query, bool executed, const QString &operation)
+{
+    if (executed && query.next())
+        return ValidationLookupResult::Found;
+    if (executed && !query.lastError().isValid())
+        return ValidationLookupResult::NotFound;
+
+    ErrorHandler::sqlFailure(query.lastError(), ErrorHandler::Category::Persistence, operation);
+    return ValidationLookupResult::QueryError;
+}
+
 } // namespace
 
 TableGateway::TableGateway(QSqlDatabase db)
@@ -234,48 +245,42 @@ QList<RefValue> TableGateway::loadRefValues(const QString &refTable, const QStri
     return values;
 }
 
-bool TableGateway::exists(const TableSpec &spec, const QVariant &pk) const
+ValidationLookupResult TableGateway::exists(const TableSpec &spec, const QVariant &pk) const
 {
     if (!m_db.isOpen())
-        return false;
+        return ValidationLookupResult::QueryError;
 
     QSqlQuery q(m_db);
-    q.prepare(QStringLiteral("SELECT 1 FROM %1 WHERE %2 = ? LIMIT 1")
-                  .arg(QString::fromLatin1(spec.table), QString::fromLatin1(spec.pkColumn)));
-    q.addBindValue(pk);
-    if (!q.exec()) {
-        ErrorHandler::sqlFailure(
-            q.lastError(), ErrorHandler::Category::Persistence,
-            QStringLiteral("check duplicate key in %1").arg(QString::fromLatin1(spec.table)));
-        return false;
-    }
-    return q.next();
+    const bool prepared = q.prepare(QStringLiteral("SELECT 1 FROM %1 WHERE %2 = ? LIMIT 1")
+                                    .arg(QString::fromLatin1(spec.table), QString::fromLatin1(spec.pkColumn)));
+    if (prepared)
+        q.addBindValue(pk);
+    return existenceResult(q, prepared && q.exec(),
+                           QStringLiteral("check duplicate key in %1").arg(QString::fromLatin1(spec.table)));
 }
 
-bool TableGateway::constituentExists(const QVariant &wasteKey, const QVariant &constituentKey,
-                                       const QVariant &excludePk) const
+ValidationLookupResult TableGateway::constituentExists(const QVariant &wasteKey,
+                                                       const QVariant &constituentKey,
+                                                       const QVariant &excludePk) const
 {
-    if (!m_db.isOpen() || wasteKey.isNull() || constituentKey.isNull())
-        return false;
+    if (!m_db.isOpen())
+        return ValidationLookupResult::QueryError;
+    if (wasteKey.isNull() || constituentKey.isNull())
+        return ValidationLookupResult::NotFound;
 
     QString sql = QStringLiteral("SELECT 1 FROM waste_wasteconstituent "
                                 "WHERE id_waste_id = :waste AND id_constituent_id = :constituent");
     if (!excludePk.isNull())
         sql += QStringLiteral(" AND id <> :excluded");
     QSqlQuery q(m_db);
-    if (!q.prepare(sql + QStringLiteral(" LIMIT 1")))
-        return false;
-    q.bindValue(QStringLiteral(":waste"), wasteKey);
-    q.bindValue(QStringLiteral(":constituent"), constituentKey);
-    if (!excludePk.isNull())
-        q.bindValue(QStringLiteral(":excluded"), excludePk);
-    if (!q.exec()) {
-        ErrorHandler::sqlFailure(
-            q.lastError(), ErrorHandler::Category::Persistence,
-            QStringLiteral("check duplicate constituent"));
-        return false;
+    const bool prepared = q.prepare(sql + QStringLiteral(" LIMIT 1"));
+    if (prepared) {
+        q.bindValue(QStringLiteral(":waste"), wasteKey);
+        q.bindValue(QStringLiteral(":constituent"), constituentKey);
+        if (!excludePk.isNull())
+            q.bindValue(QStringLiteral(":excluded"), excludePk);
     }
-    return q.next();
+    return existenceResult(q, prepared && q.exec(), QStringLiteral("check duplicate constituent"));
 }
 
 DbResult TableGateway::insert(const TableSpec &spec, const QVariantMap &values) const
