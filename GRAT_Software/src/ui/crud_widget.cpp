@@ -23,9 +23,7 @@
 #include <QTableView>
 #include <QVBoxLayout>
 
-#include "core/auth/auth_service.h"
 #include "core/auth/permission_checker.h"
-#include "core/crud/validator.h"
 #include "core/db/database.h"
 #include "core/errors/error_handler.h"
 #include "ui/master_detail_widget.h"
@@ -41,6 +39,13 @@ CrudWidget::CrudWidget(Database &database, const TableSpec &spec,
     , m_session(session)
     , m_title(title)
     , m_gateway(database.connection())
+    , m_repository(m_gateway, spec)
+    , m_validator(m_gateway)
+    , m_controller(spec, session, m_repository,
+                   [this](const TableSpec &table, const QVariantMap &values, bool isInsert,
+                          const QVariantMap &original) {
+                       return m_validator.validate(table, values, isInsert, original);
+                   })
 {
     setObjectName(QStringLiteral("crudWidget_") + QString::fromLatin1(spec.table));
 
@@ -169,12 +174,12 @@ void CrudWidget::refreshGrid()
     m_gridModel->setColumnCount(headers.size());
     m_gridModel->setHorizontalHeaderLabels(headers);
 
-    QString loadError;
-    m_records = m_gateway.selectAll(m_spec, &loadError);
-    if (loadError.isEmpty())
+    const RecordListResult loaded = m_controller.records();
+    m_records = loaded.records;
+    if (loaded.success)
         clearError();
     else
-        showError(loadError);
+        showError(loaded.error);
 
     for (const QVariantMap &record : m_records) {
         const QString recordState = record.value(QStringLiteral("is_active")).toString();
@@ -216,6 +221,7 @@ void CrudWidget::refreshGrid()
     m_refreshing = false;
 
     // Refreshing always starts from a clean, read-only form (Req 2.5/5.3).
+    m_controller.cancel();
     m_form->clear();
     m_form->setMode(RegisterForm::Mode::ReadOnly);
     m_form->reloadReferences();
@@ -237,7 +243,7 @@ void CrudWidget::refreshAfterReconnect()
         }
     }
 
-    if (m_operation != Operation::Idle || childPending) {
+    if (m_controller.operation() != Operation::Idle || childPending) {
         // Never discard an operator's unsaved form because the timer noticed the
         // recovery; update the reference lists and command state in place.
         m_form->reloadReferences();
@@ -289,10 +295,11 @@ void CrudWidget::onGridSelectionChanged()
 
     const QModelIndexList selected = m_grid->selectionModel()->selectedRows();
     if (selected.isEmpty()) {
-        if (m_operation != Operation::Idle)
+        if (m_controller.operation() != Operation::Idle)
             return; // keep the pending Add/Modify form visible
 
         m_selectedRow = -1;
+        m_controller.selectRecord({});
         m_form->clear();
         m_form->setMode(RegisterForm::Mode::ReadOnly);
         updateCommandState();
@@ -307,10 +314,9 @@ void CrudWidget::onGridSelectionChanged()
 
     // Selecting another row replaces the displayed record (Req 2.4). During Add
     // this abandons the pending new record; during Modify it keeps Modify mode.
-    if (m_operation == Operation::Adding)
-        m_operation = Operation::Idle;
+    m_controller.selectRecord(m_records.at(row));
 
-    if (m_operation == Operation::Modifying) {
+    if (m_controller.operation() == Operation::Modifying) {
         m_form->setMode(RegisterForm::Mode::Modifying);
         m_form->load(m_records.at(row));
     } else {
@@ -333,26 +339,17 @@ QVariant CrudWidget::currentPk() const
     return currentRecord().value(QString::fromLatin1(m_spec.pkColumn));
 }
 
-bool CrudWidget::hasColumn(const QString &columnName) const
-{
-    for (const ColumnSpec &column : m_spec.columns) {
-        if (columnName == QLatin1String(column.dbColumn))
-            return true;
-    }
-    return false;
-}
-
 void CrudWidget::startAdd()
 {
-    if (m_operation != Operation::Idle)
+    if (m_controller.operation() != Operation::Idle || !ensureDatabaseAvailable())
         return;
-    if (!ensureDatabaseAvailable())
+    const ControllerResult result = m_controller.startAdd();
+    if (!result.success) {
+        QMessageBox::information(this, tr("Agregar registro"), result.error);
         return;
-
-    m_operation = Operation::Adding;
+    }
     m_selectedRow = -1;
     m_grid->clearSelection();
-
     m_form->clear();
     m_form->setState(QStringLiteral("A"));
     m_form->setMode(RegisterForm::Mode::Adding);
@@ -361,18 +358,13 @@ void CrudWidget::startAdd()
 
 void CrudWidget::startModify()
 {
-    if (m_operation != Operation::Idle)
+    if (m_controller.operation() != Operation::Idle || !ensureDatabaseAvailable())
         return;
-    if (!ensureDatabaseAvailable())
-        return;
-
-    if (m_selectedRow < 0) {
-        QMessageBox::information(this, tr("Modificar registro"),
-                                 tr("Seleccione primero un registro en la tabla."));
+    const ControllerResult result = m_controller.startModify();
+    if (!result.success) {
+        QMessageBox::information(this, tr("Modificar registro"), result.error);
         return;
     }
-
-    m_operation = Operation::Modifying;
     m_form->load(currentRecord());
     m_form->setMode(RegisterForm::Mode::Modifying);
     updateCommandState();
@@ -380,104 +372,47 @@ void CrudWidget::startModify()
 
 void CrudWidget::applyState(const QString &newState)
 {
-    if (m_operation != Operation::Idle)
+    if (m_controller.operation() != Operation::Idle || !ensureDatabaseAvailable())
         return;
-    if (!ensureDatabaseAvailable())
-        return;
-
-    if (m_selectedRow < 0) {
-        QMessageBox::information(this, tr("Cambio de estado"),
-                                 tr("Seleccione primero un registro en la tabla."));
-        return;
-    }
-
-    const DbResult result = m_gateway.setState(m_spec, currentPk(), newState);
+    const ControllerResult result = m_controller.changeState(newState);
     if (!result.success) {
         QMessageBox::critical(this, tr("Operacion fallida"), result.error);
         return;
     }
-
-    m_operation = Operation::Idle;
     refreshGrid();
 }
 
 void CrudWidget::updateRecord()
 {
-    if (m_operation == Operation::Idle) {
-        // Req 5.2: Update without a pending operation explains why nothing happens.
-        QMessageBox::information(this, tr("Actualizar registro"),
-                                 tr("No hay una operacion pendiente para actualizar. "
-                                    "Elija Agregar o Modificar primero."));
+    if (m_controller.operation() == Operation::Idle) {
+        QMessageBox::information(this, tr("Actualizar registro"), m_controller.save({}).error);
         return;
     }
-
     if (!ensureDatabaseAvailable())
         return;
-
-    const bool isInsert = m_operation == Operation::Adding;
-    QVariantMap values = m_form->collect();
-
-    if (isInsert) {
-        // created_by_id defaults to the authenticated operator (Task 10).
-        if (hasColumn(QStringLiteral("created_by_id")))
-            values.insert(QStringLiteral("created_by_id"), m_session.userId);
-    } else {
-        if (m_selectedRow < 0)
-            return;
-        if (hasColumn(QStringLiteral("updated_at"))) {
-            values.insert(QStringLiteral("updated_at"),
-                          QDateTime::currentDateTimeUtc().toString(Qt::ISODate));
-        }
-    }
-
-    // Req 7: validate before any write, collecting every invalid field so the
-    // operator can fix them in one pass (Req 7.4–7.5).
-    const Validator validator(m_gateway);
-    const QList<ValidationError> errors = validator.validate(m_spec, values, isInsert);
-    if (!errors.isEmpty()) {
+    const ControllerResult result = m_controller.save(m_form->collect());
+    if (!result.validationErrors.isEmpty()) {
         QStringList details;
-        details.reserve(errors.size());
-        for (const ValidationError &error : errors)
+        for (const ValidationError &error : result.validationErrors)
             details << QStringLiteral("- %1").arg(error.reason);
         QMessageBox::warning(this, tr("Validation failed"),
                              tr("Corrija los siguientes campos:\n\n%1")
                                  .arg(details.join(QLatin1Char('\n'))));
         return;
     }
-
-    // Passwords are stored hashed, never as typed (design §13.3).
-    for (const ColumnSpec &column : m_spec.columns) {
-        if (column.type != ColumnType::Password)
-            continue;
-        const QString columnName = QString::fromLatin1(column.dbColumn);
-        if (!values.contains(columnName))
-            continue;
-        const QString plainText = values.value(columnName).toString();
-        if (!plainText.isEmpty())
-            values[columnName] = AuthService::hashPassword(plainText);
-    }
-
-    DbResult result;
-    if (isInsert)
-        result = m_gateway.insert(m_spec, values);
-    else
-        result = m_gateway.update(m_spec, currentPk(), values);
-
     if (!result.success) {
         QMessageBox::critical(this, tr("Actualizacion fallida"), result.error);
         return;
     }
-
-    m_operation = Operation::Idle;
     refreshGrid();
 }
 
 void CrudWidget::cancelOperation()
 {
-    if (m_operation == Operation::Idle)
+    if (m_controller.operation() == Operation::Idle)
         return;
 
-    m_operation = Operation::Idle;
+    m_controller.cancel();
     m_selectedRow = -1;
     m_grid->clearSelection();
     m_form->clear();
@@ -488,16 +423,12 @@ void CrudWidget::cancelOperation()
 
 void CrudWidget::updateCommandState()
 {
-    const bool idle = m_operation == Operation::Idle;
+    const bool idle = m_controller.operation() == Operation::Idle;
     const bool hasSelection = m_selectedRow >= 0 && m_selectedRow < m_records.size();
     const bool dbAvailable = m_database.isAlive();
 
-    const QString appLabel = QString::fromLatin1(m_spec.appLabel);
-    const QString model = QString::fromLatin1(m_spec.model);
-    const bool canAdd = PermissionChecker::can(m_session, PermissionAction::Add,
-                                               appLabel, model);
-    const bool canChange = PermissionChecker::can(m_session, PermissionAction::Change,
-                                                  appLabel, model);
+    const bool canAdd = m_controller.can(PermissionAction::Add);
+    const bool canChange = m_controller.canEdit();
 
     m_addButton->setEnabled(idle && canAdd && dbAvailable);
     m_modifyButton->setEnabled(idle && hasSelection && canChange && dbAvailable);
@@ -506,7 +437,8 @@ void CrudWidget::updateCommandState()
     m_reactivateButton->setEnabled(idle && hasSelection && canChange && dbAvailable);
     // Update stays clickable in Idle so the operator gets the Req 5.2 message,
     // but only when they may change the table and the database is available.
-    m_updateButton->setEnabled(canChange && dbAvailable);
+    m_updateButton->setEnabled((m_controller.operation() == Operation::Adding ? canAdd : canChange)
+                               && dbAvailable);
     m_cancelButton->setEnabled(!idle);
 
     updateDetails();
@@ -519,7 +451,7 @@ void CrudWidget::updateDetails()
 
     // Children belong to a saved parent: none while adding or with no selection.
     const bool hasSelection = m_selectedRow >= 0 && m_selectedRow < m_records.size();
-    const QVariant parentKey = (hasSelection && m_operation != Operation::Adding)
+    const QVariant parentKey = (hasSelection && m_controller.operation() != Operation::Adding)
         ? currentPk()
         : QVariant();
 

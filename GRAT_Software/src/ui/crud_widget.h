@@ -15,6 +15,8 @@
 #include "app/session.h"
 #include "core/crud/table_gateway.h"
 #include "core/crud/table_spec.h"
+#include "core/crud/repositories/sql_record_repository.h"
+#include "core/crud/controllers/crud_controller.h"
 
 class Database;
 class MasterDetailWidget;
@@ -44,17 +46,12 @@ private slots:
     void onGridSelectionChanged();
 
 private:
-    enum class Operation {
-        Idle,
-        Adding,
-        Modifying
-    };
+    using Operation = CrudController::Operation;
 
     QString displayValue(const ColumnSpec &column, const QVariant &value) const;
     QString stateText(const QString &state) const;
     QVariantMap currentRecord() const;
     QVariant currentPk() const;
-    bool hasColumn(const QString &columnName) const;
 
     void startAdd();
     void startModify();
@@ -72,6 +69,9 @@ private:
     AuthSession m_session;
     QString m_title;
     TableGateway m_gateway;
+    SqlRecordRepository m_repository;
+    Validator m_validator;
+    CrudController m_controller;
 
     RegisterForm *m_form = nullptr;
     QLabel *m_errorLabel = nullptr;
@@ -81,7 +81,6 @@ private:
     QList<QVariantMap> m_records;
     int m_selectedRow = -1;
     bool m_refreshing = false;
-    Operation m_operation = Operation::Idle;
 
     QPushButton *m_addButton = nullptr;
     QPushButton *m_modifyButton = nullptr;
