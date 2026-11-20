@@ -12,6 +12,7 @@
 #include <QVariantMap>
 
 #include "core/crud/table_spec.h"
+#include "core/crud/validation/i_validation_lookup.h"
 #include "core/errors/error_handler.h"
 
 struct AuthSession;
@@ -52,12 +53,12 @@ public:
     QList<RefValue> loadRefValues(const QString &refTable, const QString &refPk,
                                    const QString &refDisplay,
                                    QString *errorMessage = nullptr) const;
-    // True if a row with the given PK exists (duplicate-PK validation — Req 7.2).
-    bool exists(const TableSpec &spec, const QVariant &pk) const;
+    // Look up a row by PK for duplicate-PK validation (Req 7.2).
+    ValidationLookupResult exists(const TableSpec &spec, const QVariant &pk) const;
     // A constituent may occur only once per waste, including inactive/deleted rows.
     // Exclude the edited row so changing its amount does not count as a duplicate.
-    bool constituentExists(const QVariant &wasteKey, const QVariant &constituentKey,
-                           const QVariant &excludePk = {}) const;
+    ValidationLookupResult constituentExists(const QVariant &wasteKey, const QVariant &constituentKey,
+                                              const QVariant &excludePk = {}) const;
 
     // Write operations ------------------------------------------------------
     // Explicitly authorized role-permission writes; definitions are never modified.
