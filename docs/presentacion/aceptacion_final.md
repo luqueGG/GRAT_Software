@@ -1,199 +1,231 @@
 # Aceptacion final - GRAT_Software (P5)
 
-Estado del documento: **plan de aceptacion preparado; resultados pendientes de
-ejecucion**. Este archivo se actualizara en el tercer commit con resultados
-reales. Ningun caso se marcara como `Aprobado` sin ejecucion.
+Estado del documento: **aceptacion parcial con resultados reales registrados el
+19 de noviembre de 2026**. Los casos no ejecutados permanecen como `Pendiente`;
+no se han marcado como aprobados casos diferentes a los verificados.
 
 ## 1. Version bajo prueba
 
 | Dato | Valor |
 |---|---|
-| Commit base de integracion | `16abf09c44a8f767de3119978d70a749d62d8e18` (`origin/main`) |
+| Commit base y probado | `16abf09c44a8f767de3119978d70a749d62d8e18` (`origin/main` al crear la rama) |
 | Rama P5 | `docs/rubrica-demo-evidencias` |
-| Rama destino solicitada | `improvements/final` (**no existe en `origin` al preparar esta entrega**) |
-| Base real utilizada | `origin/main`, que ya contiene P1, P2, P3, P4 y P6 documentados |
-| Entorno previsto | Windows, Qt 6.12.0 MinGW 64-bit, CMake 3.x, Ninja, SQLite/QSQLITE |
-| Base de datos | Copia aislada creada por `tools/demo/prepare_demo_db.py` |
+| Rama destino solicitada | `improvements/final` (**no existe en `origin` al cierre de esta entrega**) |
+| Base real utilizada | `origin/main` en el commit indicado arriba |
+| Commit local P5 | `e4361a9` al momento de ejecutar las verificaciones GUI y de compilacion |
+| Entorno | Windows, Qt 6.12.0 MinGW 64-bit, CMake 3.x, Ninja, SQLite/QSQLITE |
+| Base de datos de demo | `C:\Users\USER\AppData\Local\Temp\opencode\grat_demo\db\grat.db` |
 | Base habitual | `GRAT_Software/db/grat.db` - prohibido modificar |
+| Usuarios de la demo | `admin/Admin123!`, `supervisor/Supervisor123!`, `operator/Operator123!` |
 
-Dependencia registrada: `improvements/final` no aparece en
-`git branch -a` tras `git fetch origin --prune`. No se creo ni modifico esa
-rama; se trabajo desde `origin/main` y se documenta la desviacion.
+Observaciones sobre la base:
+
+- `git fetch origin --prune` confirmo que `improvements/final` no existe. Por
+  eso no se creo ni modifico esa rama; la entrega P5 se construyo desde
+  `origin/main`.
+- Despues de ejecutar las verificaciones, `origin/main` avanzo a `feb53db`
+  (merge de `feature/stragy-polimorfismo`, PR #10). Ese cambio **no** fue
+  incluido en el binario ni en las capturas aqui registradas; por ello no se
+  afirma que P5 haya verificado el codigo agregado en `feb53db`.
 
 ## 2. Convenciones
 
-Estados permitidos: **Aprobado**, **Fallido**, **Bloqueado**, **Pendiente**.
+Estados permitidos: **Aprobado**, **Aprobado (verificacion manual del
+usuario)**, **Fallido**, **Bloqueado**, **Pendiente**.
 
 - `Aprobado`: ejecutado en esta sesion con resultado conforme.
+- `Aprobado (verificacion manual del usuario)`: confirmado por el usuario;
+  no se afirma ejecucion automatizada adicional.
 - `Fallido`: ejecutado con resultado no conforme.
 - `Bloqueado`: existe una dependencia externa que impide ejecutarlo.
-- `Pendiente`: aun no ejecutado; debe ejecutarse segun los pasos indicados.
+- `Pendiente`: no ejecutado; conserva su procedimiento para ejecucion futura.
 
-## 3. Casos de aceptacion
+## 3. Resumen de resultados
 
-### AC-01 - Inicio de sesion Administrator
+| ID | Caso | Estado | Evidencia principal |
+|---|---|---|---|
+| AC-01 | Inicio de sesion `Administrator` | Aprobado | `01_login_admin.png`, `02_menu_modulos_admin.png`, `16_admin_salida.txt` |
+| AC-02 | Inicio de sesion `Supervisor` | Pendiente | Sin ejecutar |
+| AC-03 | Inicio de sesion `Operator` | Pendiente | Sin ejecutar |
+| AC-04 | Accion permitida y denegada por rol | Pendiente | Sin ejecutar |
+| AC-05 | Modificacion de permisos y reflejo en sesion | Pendiente | Sin ejecutar |
+| AC-06 | Validacion de campo obligatorio | Pendiente | Sin ejecutar |
+| AC-07 | Validacion de duplicado | Pendiente | Sin ejecutar |
+| AC-08 | Consulta maestro-detalle de residuos | Aprobado (consulta) | `03_residuos_maestro_detalle.png`, `15_residuos_salida.txt` |
+| AC-09 | Maestro-detalle de traslados y estados | Pendiente | Sin ejecutar |
+| AC-10 | Reporte autorizado, filtro y conteo | Aprobado | `09_reportes_conteo.png`, `14_reportes_salida.txt` |
+| AC-11 | Exportacion CSV | Aprobado (verificacion manual del usuario) | Registro de este documento |
+| AC-12 | Pruebas automatizadas y build | Aprobado | `11_ctest_salida.txt`, `12_build_salida.txt` |
+
+## 4. Casos de aceptacion
+
+### AC-01 - Inicio de sesion `Administrator`
 
 - **Objetivo:** validar acceso del rol con 43 permisos.
 - **Precondiciones:** base aislada creada; app iniciada desde esa carpeta.
-- **Pasos:** escribir `admin` / `Admin123!`; pulsar `OK`.
-- **Resultado esperado:** ventana principal; barra de estado con `admin` y `Administrador`; seis modulos visibles.
-- **Resultado observado:** sin ejecutar.
-- **Estado:** Pendiente.
-- **Entorno:** Windows / Qt 6 / build-rubrica-app.
 - **Comando:** `.\grat_software.exe` desde la carpeta aislada.
 - **Commit probado:** `16abf09`.
-- **Evidencia:** `evidencias/01_login_admin.png`, `evidencias/02_menu_modulos_admin.png`.
+- **Resultado observado:** inicio de sesion correcto con `admin`; la barra de
+  estado mostro `Rol(es): Administrador`; el arbol de modulos incluyo
+  `Ubicaciones`, `Paises`, `Subdivisiones`, `Catalogos`, `Componentes`,
+  `Tipos de contenedores`, `Niveles de toxicidad`, `Tipos de transporte`,
+  `Usuarios`, `Residuos`, `Empresas generadoras`, `Transporte`, `Destinos`,
+  `Empresas transportistas` y `Traslados`.
+- **Observacion:** el boton del cuadro de acceso se rotulo `Iniciar sesion`,
+  no `OK` como se escribio en el guion inicial.
+- **Estado:** Aprobado.
+- **Evidencia:** `evidencias/01_login_admin.png`,
+  `evidencias/02_menu_modulos_admin.png`, `evidencias/16_admin_salida.txt`.
 
-### AC-02 - Inicio de sesion Supervisor
+### AC-02 - Inicio de sesion `Supervisor`
 
 - **Objetivo:** validar acceso del rol con 36 permisos.
-- **Precondiciones:** base aislada creada.
-- **Pasos:** escribir `supervisor` / `Supervisor123!`; pulsar `OK`.
-- **Resultado esperado:** ventana principal sin modulo `Administracion`; barra de estado con `Supervisor`.
+- **Pasos previstos:** escribir `supervisor` / `Supervisor123!`; pulsar
+  `Iniciar sesion`; verificar ausencia de `Administracion` y texto
+  `Supervisor` en la barra de estado.
 - **Resultado observado:** sin ejecutar.
 - **Estado:** Pendiente.
-- **Entorno:** igual a AC-01.
-- **Comando:** igual a AC-01.
-- **Commit probado:** `16abf09`.
-- **Evidencia:** a definir durante la ejecucion.
+- **Evidencia:** no generada; no se fabrico captura.
 
-### AC-03 - Inicio de sesion Operator
+### AC-03 - Inicio de sesion `Operator`
 
 - **Objetivo:** validar acceso del rol con 19 permisos.
-- **Precondiciones:** base aislada creada.
-- **Pasos:** escribir `operator` / `Operator123!`; pulsar `OK`.
-- **Resultado esperado:** sin modulos `Usuarios` ni `Administracion`; tablas de solo lectura sin botones de escritura.
+- **Pasos previstos:** escribir `operator` / `Operator123!`; verificar ausencia
+  de `Usuarios` y `Administracion`, y tablas sin botones de escritura.
 - **Resultado observado:** sin ejecutar.
 - **Estado:** Pendiente.
-- **Entorno:** igual a AC-01.
-- **Comando:** igual a AC-01.
-- **Commit probado:** `16abf09`.
-- **Evidencia:** `evidencias/06_operador_permisos.png`.
+- **Evidencia:** `evidencias/06_operador_permisos.png` queda como evidencia
+  prevista, no generada.
 
 ### AC-04 - Accion permitida y denegada por rol
 
 - **Objetivo:** comparar una operacion permitida con una denegada.
-- **Precondiciones:** sesiones indicadas.
-- **Pasos:** `admin` abre `Administracion > Roles`; `operator` intenta ver `Usuarios` y pulsar `Agregar` en `Paises`.
-- **Resultado esperado:** `admin` puede abrir Roles; `operator` no ve esos modulos ni botones de alta.
-- **Resultado observado:** sin ejecutar.
+- **Pasos previstos:** `admin` abre `Administracion > Roles`; `operator`
+  intenta ver `Usuarios` y pulsar `Agregar` en `Paises`.
+- **Resultado observado:** sin ejecutar. No se abrio `Administracion > Roles`
+  ni se inicio sesion como `operator`.
 - **Estado:** Pendiente.
-- **Entorno:** igual a AC-01.
-- **Comando:** interaccion GUI.
-- **Commit probado:** `16abf09`.
-- **Evidencia:** `evidencias/06_operador_permisos.png`, `evidencias/07_roles_revocar.png`.
+- **Evidencia:** `evidencias/06_operador_permisos.png` y
+  `evidencias/07_roles_revocar.png` quedan como evidencias previstas, no
+  generadas.
 
 ### AC-05 - Modificacion autorizada de permisos y reflejo en sesion
 
 - **Objetivo:** verificar otorgamiento/revocacion y el momento de actualizacion.
-- **Precondiciones:** sesion `admin`; rol `Supervisor` seleccionado.
-- **Pasos:** revocar `add_constituent` a `Supervisor`; cerrar sesion; iniciar como `supervisor`; abrir `Catalogos > Componentes`.
-- **Resultado esperado:** el boton `Agregar` ya no aparece en la nueva sesion; la sesion abierta antes del cambio no se actualiza automaticamente (comportamiento documentado por P1).
-- **Resultado observado:** sin ejecutar.
+- **Pasos previstos:** revocar `add_constituent` a `Supervisor`; cerrar sesion;
+  iniciar como `supervisor`; abrir `Catalogos > Componentes`.
+- **Resultado observado:** sin ejecutar. No se modificaron permisos.
 - **Estado:** Pendiente.
-- **Entorno:** igual a AC-01.
-- **Comando:** interaccion GUI.
-- **Commit probado:** `16abf09`.
-- **Evidencia:** `evidencias/07_roles_revocar.png`.
+- **Evidencia:** `evidencias/07_roles_revocar.png` queda como evidencia
+  prevista, no generada.
 
 ### AC-06 - Validacion de campo obligatorio
 
 - **Objetivo:** comprobar rechazo sin escritura.
-- **Precondiciones:** sesion `admin`; tabla `Paises`.
-- **Pasos:** `Agregar`; dejar `Codigo (Alfa-2)` vacio; completar los demas campos obligatorios; `Actualizar`.
-- **Resultado esperado:** mensaje `Validation failed`; no se inserta fila; conteo previo conservado.
+- **Pasos previstos:** en `Paises`, `Agregar`, dejar `Codigo (Alfa-2)` vacio,
+  completar los demas campos obligatorios y pulsar `Actualizar`.
 - **Resultado observado:** sin ejecutar.
 - **Estado:** Pendiente.
-- **Entorno:** igual a AC-01.
-- **Comando:** interaccion GUI + consulta SQLite de conteo.
-- **Commit probado:** `16abf09`.
-- **Evidencia:** `evidencias/08_validacion.png`.
+- **Evidencia:** `evidencias/08_validacion.png` queda como evidencia prevista,
+  no generada.
 
 ### AC-07 - Validacion de duplicado
 
 - **Objetivo:** comprobar rechazo de clave primaria duplicada.
-- **Precondiciones:** base aislada con `PE` ya presente.
-- **Pasos:** `Agregar` en `Paises`; repetir `PE`; completar el resto; `Actualizar`.
-- **Resultado esperado:** error por duplicado; no se modifica la fila existente.
+- **Pasos previstos:** en `Paises`, repetir `PE` ya presente en la base de
+  demo y verificar que no se modifique la fila existente.
 - **Resultado observado:** sin ejecutar.
 - **Estado:** Pendiente.
-- **Entorno:** igual a AC-01.
-- **Comando:** interaccion GUI.
-- **Commit probado:** `16abf09`.
-- **Evidencia:** a definir durante la ejecucion.
+- **Evidencia:** no generada.
 
-### AC-08 - Maestro-detalle de residuos
+### AC-08 - Consulta maestro-detalle de residuos
 
-- **Objetivo:** crear principal, crear hijo, asociar y consultar.
-- **Precondiciones:** sesion `admin`; catalogos de la demo presentes.
-- **Pasos:** en `Residuos`, `Agregar` `RS-DEMO-01`; guardar; en la pestaña `Constituents`, agregar dos filas; seleccionar el padre y verificar que solo aparezcan sus hijos.
-- **Resultado esperado:** relacion por `id_waste_id` correcta; los hijos de otro padre no aparecen.
-- **Resultado observado:** sin ejecutar.
-- **Estado:** Pendiente.
-- **Entorno:** igual a AC-01.
-- **Comando:** interaccion GUI + consulta SQLite.
+- **Objetivo:** verificar la asociacion padre-hijo con los datos precargados de
+  la demo. La creacion de registros por interfaz queda fuera de este caso
+  verificado.
+- **Pasos ejecutados:** iniciar como `admin`; abrir `Residuos`; seleccionar
+  `RS-DEMO-01`; abrir la pestaña de componentes.
 - **Commit probado:** `16abf09`.
-- **Evidencia:** `evidencias/03_residuos_maestro_detalle.png`.
+- **Resultado observado:** el registro maestro `RS-DEMO-01` mostro dos hijos:
+  `1 - Plastico / 7.50 / Activo` y `2 - Papel / 5.00 / Activo`. El registro
+  `RS-DEMO-02` aparece como `Inactivo` y no se mezclo con los hijos del primero.
+- **Estado:** Aprobado (consulta). La creacion/edicion por interfaz sigue sin
+  ejecutarse y no se reporta como verificada.
+- **Evidencia:** `evidencias/03_residuos_maestro_detalle.png`,
+  `evidencias/15_residuos_salida.txt`.
 
 ### AC-09 - Maestro-detalle de traslados y estados
 
 - **Objetivo:** verificar tramo hijo y ciclo de estado del traslado.
-- **Precondiciones:** residuo de la demo presente.
-- **Pasos:** en `Traslados`, abrir `TR-DEMO-01`; mostrar la pestaña de tramos; `Desactivar`, verificar `I`, `Reactivar`, verificar `A`.
-- **Resultado esperado:** tramo asociado al traslado; estado logico reversible sin borrado fisico.
-- **Resultado observado:** sin ejecutar.
+- **Pasos previstos:** en `Traslados`, abrir `TR-DEMO-01`; mostrar la pestaña
+  de tramos; `Desactivar`; verificar `I`; `Reactivar`; verificar `A`.
+- **Resultado observado:** sin ejecutar. No se abrio el modulo `Traslados` ni
+  se cambio estado.
 - **Estado:** Pendiente.
-- **Entorno:** igual a AC-01.
-- **Comando:** interaccion GUI + consulta SQLite.
-- **Commit probado:** `16abf09`.
-- **Evidencia:** `evidencias/04_traslados_detalle.png`, `evidencias/05_estados.png`.
+- **Evidencia:** `evidencias/04_traslados_detalle.png` y
+  `evidencias/05_estados.png` quedan como evidencias previstas, no generadas.
 
 ### AC-10 - Reporte autorizado, filtro y conteo
 
 - **Objetivo:** verificar acceso, filtro y conteo de reporte de residuos.
-- **Precondiciones:** sesion `admin` (tiene `view_waste`).
-- **Pasos:** `Reportes > Abrir reportes`; elegir `Residuos registrados`; filtrar `Activo (A)`; leer `Registros` y `Cantidad total`.
-- **Resultado esperado:** solo filas activas; conteo y suma coherentes con la base aislada.
-- **Resultado observado:** sin ejecutar.
-- **Estado:** Pendiente.
-- **Entorno:** igual a AC-01.
-- **Comando:** interaccion GUI.
+- **Pasos ejecutados:** sesion `admin`; `Reportes > Abrir reportes`; elegir
+  `Residuos registrados`; filtrar `Activo (A)`.
 - **Commit probado:** `16abf09`.
-- **Evidencia:** `evidencias/09_reportes_conteo.png`.
+- **Resultado observado:** `Registros: 1`, `Cantidad total: 12.50` y una sola
+  fila `RS-DEMO-01,Empresa Generadora Demo SAC,12.50,Baja,admin,2026-11-20T02:41:00Z,A`.
+- **Estado:** Aprobado.
+- **Evidencia:** `evidencias/09_reportes_conteo.png`,
+  `evidencias/14_reportes_salida.txt`.
 
-### AC-11 - Exportacion CSV y correspondencia con la tabla
+### AC-11 - Exportacion CSV
 
-- **Objetivo:** comprobar que el CSV contiene exactamente el conjunto filtrado.
-- **Precondiciones:** reporte con filas visibles.
-- **Pasos:** `Exportar CSV`; guardar en la carpeta de evidencias; contar filas del archivo; comparar con `Registros`.
-- **Resultado esperado:** filas CSV = conteo mostrado; UTF-8 con BOM; CRLF.
-- **Resultado observado:** sin ejecutar.
-- **Estado:** Pendiente.
-- **Entorno:** igual a AC-01.
-- **Comando:** interaccion GUI + inspeccion del CSV.
-- **Commit probado:** `16abf09`.
-- **Evidencia:** `evidencias/10_exportacion_csv.png`, `evidencias/reportes_residuos_activos.csv`.
+- **Objetivo:** comprobar la exportacion CSV del reporte filtrado.
+- **Origen de la verificacion:** **verificacion manual realizada por el
+  usuario el 19 de noviembre de 2026**. El usuario informo que la probo y
+ 	functiona correctamente.
+- **Alcance de esta entrega:** no se volvio a ejecutar la prueba manual, no se
+  abrio nuevamente el cuadro `Guardar CSV` y no se genero ni fabrico un archivo
+  CSV en el repositorio. No se añaden resultados adicionales a los informados
+  por el usuario.
+- **Estado:** Aprobado (verificacion manual del usuario).
+- **Evidencia:** este registro documental. No hay evidencia de captura ni
+  archivo CSV generado por la automatizacion P5.
 
 ### AC-12 - Pruebas automatizadas y build
 
 - **Objetivo:** verificar compilacion y suite de pruebas.
-- **Precondiciones:** dependencias Qt6, CMake y Ninja disponibles.
-- **Pasos:** ejecutar los cuatro comandos de la seccion 4.
-- **Resultado esperado:** build de pruebas y build de app correctos; CTest ejecuta las pruebas descubiertas.
-- **Resultado observado:** sin ejecutar.
-- **Estado:** Pendiente.
-- **Entorno:** Windows / Qt 6.12.0 MinGW 64-bit.
-- **Comando:** ver seccion 4.
 - **Commit probado:** `16abf09`.
-- **Evidencia:** `evidencias/11_ctest_salida.txt`, `evidencias/12_build_salida.txt`.
+- **Comandos ejecutados:** los de la seccion 5, con
+  `C:\Qt\6.12.0\mingw_64\bin` antepuesto a `PATH` para CTest.
+- **Resultado observado:**
 
-## 4. Comandos de verificacion
+  | Operacion | Resultado |
+  |---|---|
+  | Configurar build de pruebas | Correcto |
+  | Compilar build de pruebas | Correcto, 36/36 pasos |
+  | `ctest -N` | 1 prueba descubierta: `test_reportes` |
+  | `ctest --output-on-failure` | `1/1 Test #1: test_reportes .... Passed`, `100% tests passed, 0 tests failed out of 1` |
+  | Configurar build de aplicacion | Correcto |
+  | Compilar aplicacion (`BUILD_TESTING=OFF`) | Correcto, 28/28 pasos |
+
+- **Primer intento:** CTest termino con `0xc0000135` porque no se encontraban
+  DLL de Qt. Se corrigio anteponiendo `C:\Qt\6.12.0\mingw_64\bin` a `PATH`; el
+  resultado final fue el indicado en la tabla.
+- **Verificacion integral final:** se ejecuto una sola vez al cierre; CMake
+  reconfiguro ambos builds, Ninja informo `no work to do` porque ya estaban
+  compilados, `ctest -N`± displayed `test_reportes` y CTest termino
+  `1/1 passed` en `0.03 s`. Ademas verifico los seis entregables P5, la rama
+  actual y el hash de la base original.
+- **Estado:** Aprobado.
+- **Evidencia:** `evidencias/11_ctest_salida.txt`,
+  `evidencias/12_build_salida.txt`, `evidencias/17_verificacion_integral.txt`.
+
+## 5. Comandos de verificacion
 
 ```bash
 git status --short --branch
 git branch --show-current
 git log --oneline -n 8
-git diff improvements/final...HEAD --stat   # falla si la rama no existe; documentado
 
 cmake -S GRAT_Software -B build-rubrica -G Ninja -DBUILD_TESTING=ON
 cmake --build build-rubrica
@@ -204,12 +236,41 @@ cmake -S GRAT_Software -B build-rubrica-app -G Ninja -DBUILD_TESTING=OFF
 cmake --build build-rubrica-app
 ```
 
-Si `ctest -N` muestra cero pruebas, ese resultado **no** se interpreta como
-suite aprobada y se documenta como limitacion.
+No se ejecuto `git diff improvements/final...HEAD` porque la rama destino no
+existe; la ausencia se registro como INC-01.
 
-## 5. Registro de incidencias
+## 6. Aislamiento de datos
+
+- La base de la demo se creo en
+  `C:\Users\USER\AppData\Local\Temp\opencode\grat_demo\db\grat.db` con
+  `tools/demo/prepare_demo_db.py`.
+- El intento de usar `C:\Users\USER\GRAT_Software\db` fue rechazado por el
+  script con: `ERROR: el directorio de demostracion debe estar fuera del
+  repositorio.`
+- Hash SHA-256 de `GRAT_Software/db/grat.db` antes y despues de la demostracion:
+  `E984D59668BC24823D286B1AFEA710ADD7165D8331FF516EA7CB925F596B4A9D`.
+- `PRAGMA foreign_key_check` sobre la base aislada devolvio un resultado vacio.
+
+## 7. Registro de incidencias
 
 | ID | Incidencia | Estado | Accion |
 |---|---|---|---|
 | INC-01 | `improvements/final` no existe en `origin` | Abierta | Se uso `origin/main` como base real; no se creo ni modifico otra rama. |
 | INC-02 | `rubrica/distribucion_mejoras_rubrica.md` no existe en el repositorio ni en el historial disponible | Abierta | Se sigue el prompt P5 como fuente; no se atribuyen autores no confirmados. |
+| INC-03 | `origin/main` avanzo a `feb53db` despues de la aceptacion | Registrada | El cambio de `feature/stragy-polimorfismo` no fue incluido en el binario probado; no se afirma su verificacion. |
+| INC-04 | El primer CTest fallo por DLL de Qt no localizada | Resuelta | Se anadio `C:\Qt\6.12.0\mingw_64\bin` a `PATH`; CTest finalizo `1/1 passed`. |
+| INC-05 | Exportacion CSV no se ejecuto por automatizacion | Cerrada por el usuario | Verificada manualmente por el usuario el 19 de noviembre de 2026; no se abrio de nuevo el dialogo. |
+| INC-06 | Escenarios de roles, validacion y estados no ejecutados | Pendiente | Se conservan como `Pendiente`; no se generaron capturas ni resultados artificiales. |
+
+## 8. Condiciones para publicar
+
+Antes de hacer push o abrir el PR deben cumplirse:
+
+1. Los cuatro commits sugeridos para P5 estan presentes y no vacios.
+2. La verificacion automatizada integral termina correctamente.
+3. No existen cambios no intencionados en codigo productivo, esquema SQLite,
+   permisos, contraseñas, UI, traduccion ni bases originales.
+4. La rama destino `improvements/final` existe en `origin`.
+
+Mientras la condicion 4 no se cumpla, los commits se conservan localmente y no
+se crea el PR. No se realiza merge.

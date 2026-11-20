@@ -1,0 +1,6 @@
+CAPTURA=C:\Users\USER\GRAT_Software\docs\presentacion\evidencias\09_reportes_conteo.png
+LABEL=Reporte:
+LABEL=Estado:
+LABEL=Registros: 1
+LABEL=Cantidad total: 12.50
+DATA=RS-DEMO-01,Empresa Generadora Demo SAC,12.50,Baja,admin,2026-11-20T02:41:00Z,A
