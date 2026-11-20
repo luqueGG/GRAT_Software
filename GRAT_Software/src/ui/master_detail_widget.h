@@ -23,6 +23,8 @@
 #include "core/auth/permission_checker.h"
 #include "core/crud/table_gateway.h"
 #include "core/crud/table_spec.h"
+#include "core/crud/repositories/sql_record_repository.h"
+#include "core/crud/controllers/child_crud_controller.h"
 
 class Database;
 class QLabel;
@@ -63,11 +65,7 @@ private slots:
     void onSelectionChanged();
 
 private:
-    enum class Operation {
-        Idle,
-        Adding,
-        Editing
-    };
+    using Operation = CrudController::Operation;
 
     void startAdd();
     void startEdit();
@@ -94,6 +92,9 @@ private:
     TableSpec m_spec;
     AuthSession m_session;
     TableGateway m_gateway;
+    SqlRecordRepository m_repository;
+    Validator m_validator;
+    ChildCrudController m_controller;
 
     QLabel *m_hintLabel = nullptr;
     QTableView *m_grid = nullptr;
@@ -108,13 +109,10 @@ private:
     QPushButton *m_saveButton = nullptr;
     QPushButton *m_cancelButton = nullptr;
 
-    Operation m_operation = Operation::Idle;
-    QVariant m_parentKey;
     QList<int> m_gridColumns;
     QList<QVariantMap> m_records;
     int m_selectedRow = -1;
     bool m_refreshing = false;
-    bool m_rowsLoaded = false;
 
     // FK column → (referenced pk as string → display label) for the grid.
     QHash<QString, QHash<QString, QString>> m_refLabels;

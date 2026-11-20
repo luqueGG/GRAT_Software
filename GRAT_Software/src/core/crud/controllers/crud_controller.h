@@ -33,7 +33,7 @@ public:
     virtual RecordListResult records();
     ControllerResult startAdd();
     ControllerResult startModify();
-    void selectRecord(const QVariantMap &record);
+    virtual void selectRecord(const QVariantMap &record);
     void cancel();
     ControllerResult save(const QVariantMap &values);
     ControllerResult changeState(const QString &state);

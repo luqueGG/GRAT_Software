@@ -8,6 +8,7 @@ else()
 endif()
 
 target_sources(${_grat_architecture_target} PRIVATE
+    "${CMAKE_CURRENT_LIST_DIR}/../../src/core/crud/controllers/child_crud_controller.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/../../src/core/crud/controllers/crud_controller.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/../../src/core/crud/repositories/sql_record_repository.cpp"
 )

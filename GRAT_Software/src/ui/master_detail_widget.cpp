@@ -17,7 +17,6 @@
 #include <QTableView>
 #include <QVBoxLayout>
 
-#include "core/crud/validator.h"
 #include "core/db/database.h"
 #include "core/errors/error_handler.h"
 #include "ui/register_form.h"
@@ -53,6 +52,13 @@ MasterDetailWidget::MasterDetailWidget(Database &database, const ChildTableSpec 
     , m_spec(toTableSpec(child))
     , m_session(session)
     , m_gateway(database.connection())
+    , m_repository(m_gateway, m_spec, child)
+    , m_validator(m_gateway)
+    , m_controller(m_spec, child, session, m_repository,
+                   [this](const TableSpec &table, const QVariantMap &values, bool isInsert,
+                          const QVariantMap &original) {
+                       return m_validator.validate(table, values, isInsert, original);
+                   })
 {
     setObjectName(QStringLiteral("masterDetail_") + QString::fromLatin1(child.table));
 
@@ -174,13 +180,8 @@ TableSpec MasterDetailWidget::toTableSpec(const ChildTableSpec &child)
 
 void MasterDetailWidget::setParentKey(const QVariant &key)
 {
-    const bool hasParent = key.isValid() && !key.toString().isEmpty()
-        && (QLatin1String(m_child.appLabel) != QLatin1String("admin")
-            || PermissionChecker::canManageRoles(m_session));
-
-    // A new parent discards any unsaved child edit (Req 6.3).
-    m_operation = Operation::Idle;
-    m_parentKey = hasParent ? key : QVariant();
+    m_controller.setParentKey(key);
+    const bool hasParent = m_controller.parentKey().isValid();
 
     m_hintLabel->setText(hasParent
                              ? (isRolePermissions() ? tr("Permisos asignados al rol seleccionado.")
@@ -193,7 +194,7 @@ void MasterDetailWidget::setParentKey(const QVariant &key)
 
 QVariant MasterDetailWidget::parentKey() const
 {
-    return m_parentKey;
+    return m_controller.parentKey();
 }
 
 QString MasterDetailWidget::title() const
@@ -208,9 +209,8 @@ void MasterDetailWidget::refresh()
     m_gridModel->removeRows(0, m_gridModel->rowCount());
     m_records.clear();
     m_selectedRow = -1;
-    m_rowsLoaded = false;
 
-    if (m_parentKey.isValid()) {
+    if (m_controller.parentKey().isValid()) {
         // Keep the contextual hint visible while rows load; replace it only with
         // a safe load error below.
         m_hintLabel->setText(isRolePermissions()
@@ -220,11 +220,10 @@ void MasterDetailWidget::refresh()
         loadReferenceLabels();
 
         // Only the rows belonging to the selected parent, in every state.
-        QString error;
-        m_records = m_gateway.selectChildren(m_child, m_parentKey, &error);
-        m_rowsLoaded = error.isEmpty();
-        if (!error.isEmpty())
-            m_hintLabel->setText(error);
+        const RecordListResult loaded = m_controller.records();
+        m_records = loaded.records;
+        if (!loaded.success)
+            m_hintLabel->setText(loaded.error);
     }
 
     for (const QVariantMap &record : m_records) {
@@ -261,6 +260,7 @@ void MasterDetailWidget::refresh()
     m_grid->clearSelection();
     m_refreshing = false;
 
+    m_controller.cancel();
     m_form->clear();
     m_form->setMode(RegisterForm::Mode::ReadOnly);
     m_form->reloadReferences();
@@ -272,7 +272,7 @@ void MasterDetailWidget::refreshAfterReconnect()
     if (!m_database.isAlive())
         return;
 
-    if (m_operation != Operation::Idle) {
+    if (m_controller.operation() != Operation::Idle) {
         m_form->reloadReferences();
         updateCommandState();
         return;
@@ -283,7 +283,7 @@ void MasterDetailWidget::refreshAfterReconnect()
 
 bool MasterDetailWidget::hasPendingEdit() const
 {
-    return m_operation != Operation::Idle;
+    return m_controller.operation() != Operation::Idle;
 }
 
 bool MasterDetailWidget::ensureDatabaseAvailable()
@@ -307,10 +307,11 @@ void MasterDetailWidget::onSelectionChanged()
 
     const QModelIndexList selected = m_grid->selectionModel()->selectedRows();
     if (selected.isEmpty()) {
-        if (m_operation != Operation::Idle)
+        if (m_controller.operation() != Operation::Idle)
             return; // keep the pending child form visible
 
         m_selectedRow = -1;
+        m_controller.selectRecord({});
         m_form->clear();
         m_form->setMode(RegisterForm::Mode::ReadOnly);
         updateCommandState();
@@ -325,10 +326,9 @@ void MasterDetailWidget::onSelectionChanged()
 
     // Selecting another row abandons a pending Add; during Edit it switches the
     // edited row (same behavior as the parent CrudWidget).
-    if (m_operation == Operation::Adding)
-        m_operation = Operation::Idle;
+    m_controller.selectRecord(m_records.at(row));
 
-    m_form->setMode(m_operation == Operation::Editing ? RegisterForm::Mode::Modifying
+    m_form->setMode(m_controller.operation() == Operation::Modifying ? RegisterForm::Mode::Modifying
                                                       : RegisterForm::Mode::ReadOnly);
     m_form->load(m_records.at(row));
     updateCommandState();
@@ -343,17 +343,15 @@ QVariantMap MasterDetailWidget::currentRecord() const
 
 void MasterDetailWidget::startAdd()
 {
-    if (m_operation != Operation::Idle || !m_parentKey.isValid()
-        || !allowed(PermissionAction::Add))
+    if (m_controller.operation() != Operation::Idle || !ensureDatabaseAvailable())
         return;
-
-    m_operation = Operation::Adding;
+    const ControllerResult result = m_controller.startAdd();
+    if (!result.success)
+        return;
     m_selectedRow = -1;
     m_grid->clearSelection();
-
-    // The FK to the parent is filled in from the selected master record.
     m_form->clear();
-    m_form->load({{QString::fromLatin1(m_child.fkToParent), m_parentKey}});
+    m_form->load({{QString::fromLatin1(m_child.fkToParent), m_controller.parentKey()}});
     m_form->setState(QStringLiteral("A"));
     m_form->setMode(RegisterForm::Mode::Adding);
     updateCommandState();
@@ -361,17 +359,13 @@ void MasterDetailWidget::startAdd()
 
 void MasterDetailWidget::startEdit()
 {
-    if (isRolePermissions() || m_operation != Operation::Idle
-        || !allowed(PermissionAction::Change))
+    if (m_controller.operation() != Operation::Idle || !ensureDatabaseAvailable())
         return;
-
-    if (m_selectedRow < 0) {
-        QMessageBox::information(this, tr("Editar %1").arg(title()),
-                                 tr("Seleccione primero una fila de la lista."));
+    const ControllerResult result = m_controller.startModify();
+    if (!result.success) {
+        QMessageBox::information(this, tr("Editar %1").arg(title()), result.error);
         return;
     }
-
-    m_operation = Operation::Editing;
     m_form->load(currentRecord());
     m_form->setMode(RegisterForm::Mode::Modifying);
     updateCommandState();
@@ -379,8 +373,8 @@ void MasterDetailWidget::startEdit()
 
 void MasterDetailWidget::removeRow()
 {
-    if (m_operation != Operation::Idle || m_selectedRow < 0
-        || !m_parentKey.isValid())
+    if (m_controller.operation() != Operation::Idle || m_selectedRow < 0
+        || !m_controller.parentKey().isValid())
         return;
     if (!ensureDatabaseAvailable())
         return;
@@ -399,10 +393,7 @@ void MasterDetailWidget::removeRow()
     if (answer != QMessageBox::Yes || !allowed(PermissionAction::Change))
         return;
 
-    const QVariant linkKey = currentRecord().value(QStringLiteral("id"));
-    const DbResult result = isRolePermissions()
-        ? m_gateway.revokeRolePermission(m_session, m_parentKey, linkKey)
-        : m_gateway.removeChild(m_child, m_parentKey, linkKey);
+    const ControllerResult result = m_controller.removeSelected();
     if (!result.success) {
         QMessageBox::critical(this, tr("Operacion fallida"), result.error);
         return;
@@ -414,15 +405,14 @@ void MasterDetailWidget::removeRow()
 
 void MasterDetailWidget::applyState(const QString &newState)
 {
-    if (m_operation != Operation::Idle || m_selectedRow < 0 || !m_child.hasState)
+    if (m_controller.operation() != Operation::Idle || m_selectedRow < 0 || !m_child.hasState)
         return;
     if (!ensureDatabaseAvailable())
         return;
     if (!allowed(PermissionAction::Change))
         return;
 
-    const DbResult result = m_gateway.setChildState(
-        m_child, m_parentKey, currentRecord().value(QStringLiteral("id")), newState);
+    const ControllerResult result = m_controller.changeState(newState);
     if (!result.success) {
         QMessageBox::critical(this, tr("Operacion fallida"), result.error);
         return;
@@ -432,60 +422,26 @@ void MasterDetailWidget::applyState(const QString &newState)
 
 void MasterDetailWidget::save()
 {
-    if (!m_parentKey.isValid())
+    if (!m_controller.parentKey().isValid() || !ensureDatabaseAvailable())
         return;
-    if (!ensureDatabaseAvailable())
-        return;
-    if (!allowed(m_operation == Operation::Adding ? PermissionAction::Add
-                                                  : PermissionAction::Change))
-        return;
-
-    if (m_operation == Operation::Idle) {
-        QMessageBox::information(this, tr("Guardar %1").arg(title()),
-                                 tr("No hay cambios pendientes por guardar. "
-                                    "Elija Agregar o Editar primero."));
+    if (m_controller.operation() == Operation::Idle) {
+        QMessageBox::information(this, tr("Guardar %1").arg(title()), m_controller.save({}).error);
         return;
     }
-
-    const bool isInsert = m_operation == Operation::Adding;
-    QVariantMap values = m_form->collect();
-    if (!isInsert && m_selectedRow < 0)
-        return;
-    values.insert(QString::fromLatin1(m_child.fkToParent), m_parentKey);
-
-    // Same rules as the parent screens: report every invalid field and write
-    // nothing when any fails (Req 7.4–7.5).
-    const Validator validator(m_gateway);
-    const QList<ValidationError> errors = validator.validate(
-        m_spec, values, isInsert, isInsert ? QVariantMap() : currentRecord());
-    if (!errors.isEmpty()) {
+    const ControllerResult result = m_controller.save(m_form->collect());
+    if (!result.validationErrors.isEmpty()) {
         QStringList details;
-        details.reserve(errors.size());
-        for (const ValidationError &error : errors)
+        for (const ValidationError &error : result.validationErrors)
             details << QStringLiteral("- %1").arg(error.reason);
         QMessageBox::warning(this, tr("Validation failed"),
                              tr("Corrija los siguientes campos:\n\n%1")
                                  .arg(details.join(QLatin1Char('\n'))));
         return;
     }
-
-    DbResult result;
-    if (isRolePermissions()) {
-        if (!isInsert)
-            return; // Grant and revoke links; never edit system permission definitions.
-        result = m_gateway.grantRolePermission(
-            m_session, m_parentKey, values.value(QStringLiteral("permission_id")));
-    } else {
-        result = isInsert
-            ? m_gateway.insertChild(m_child, m_parentKey, values)
-            : m_gateway.updateChild(m_child, m_parentKey, currentRecord().value(QStringLiteral("id")), values);
-    }
     if (!result.success) {
         QMessageBox::critical(this, tr("Guardado fallido"), result.error);
         return;
     }
-
-    m_operation = Operation::Idle;
     refresh();
     if (isRolePermissions())
         emit permissionsChanged();
@@ -493,10 +449,10 @@ void MasterDetailWidget::save()
 
 void MasterDetailWidget::cancel()
 {
-    if (m_operation == Operation::Idle)
+    if (m_controller.operation() == Operation::Idle)
         return;
 
-    m_operation = Operation::Idle;
+    m_controller.cancel();
     m_selectedRow = -1;
     m_grid->clearSelection();
     m_form->clear();
@@ -506,42 +462,28 @@ void MasterDetailWidget::cancel()
 
 bool MasterDetailWidget::allowed(PermissionAction action) const
 {
-    if (!m_session.isValid() || !m_database.isAlive())
-        return false;
-
-    const QString appLabel = QString::fromLatin1(m_child.appLabel);
-    const QString model = QString::fromLatin1(m_child.model);
-
-    // The same policy gates navigation and every role-permission operation.
-    if (appLabel == QLatin1String("admin"))
-        return m_rowsLoaded && PermissionChecker::canManageRoles(m_session);
-
-    // A user's roles and extra permissions are RBAC assignments (design §9).
-    if (appLabel == QLatin1String("user"))
-        return PermissionChecker::can(m_session, PermissionAction::AssignRole, appLabel, model);
-
-    return PermissionChecker::can(m_session, action, appLabel, model);
+    return m_database.isAlive() && m_controller.can(action);
 }
 
 bool MasterDetailWidget::isRolePermissions() const
 {
-    return QLatin1String(m_child.table) == QLatin1String("auth_group_permissions");
+    return m_controller.isRolePermissions();
 }
 
 void MasterDetailWidget::updateCommandState()
 {
-    const bool idle = m_operation == Operation::Idle;
-    const bool hasParent = m_parentKey.isValid();
+    const bool idle = m_controller.operation() == Operation::Idle;
+    const bool hasParent = m_controller.parentKey().isValid();
     const bool hasSelection = m_selectedRow >= 0 && m_selectedRow < m_records.size();
     const bool canAdd = allowed(PermissionAction::Add);
     const bool canChange = allowed(PermissionAction::Change);
 
     m_addButton->setEnabled(idle && hasParent && canAdd);
-    m_editButton->setEnabled(idle && hasSelection && canChange);
+    m_editButton->setEnabled(idle && hasSelection && m_database.isAlive() && m_controller.canEdit());
     m_removeButton->setEnabled(idle && hasSelection && canChange);
     m_inactivateButton->setEnabled(idle && hasSelection && canChange);
     m_reactivateButton->setEnabled(idle && hasSelection && canChange);
-    m_saveButton->setEnabled(!idle && (m_operation == Operation::Adding ? canAdd : canChange));
+    m_saveButton->setEnabled(!idle && (m_controller.operation() == Operation::Adding ? canAdd : canChange));
     m_cancelButton->setEnabled(!idle);
 }
 
