@@ -17,6 +17,7 @@ public:
     virtual ~IValidationLookup() = default;
 
     virtual ValidationLookupResult exists(const TableSpec &spec, const QVariant &pk) const = 0;
+    // Match the pair in every lifecycle state, excluding only the given row ID.
     virtual ValidationLookupResult constituentExists(const QVariant &wasteKey,
                                                       const QVariant &constituentKey,
                                                       const QVariant &excludePk) const = 0;

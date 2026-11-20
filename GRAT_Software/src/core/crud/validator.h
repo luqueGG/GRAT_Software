@@ -19,16 +19,28 @@
 
 class TableGateway;
 
+// Validator takes ownership. Both lists contain non-null rules in execution order.
+struct ValidationRuleSet
+{
+    // Run for each eligible column, in metadata order.
+    std::vector<std::unique_ptr<IValidationRule>> fieldRules;
+    // Run once per record, after all field rules.
+    std::vector<std::unique_ptr<IValidationRule>> recordRules;
+};
+
 class Validator
 {
 public:
+    // Add or replace a rule in this set before passing it to a constructor.
+    static ValidationRuleSet defaultRules();
+
     // Owns an adapter that borrows gateway; gateway must outlive this Validator.
-    explicit Validator(const TableGateway &gateway);
-    Validator(const TableGateway &&) = delete;
+    explicit Validator(const TableGateway &gateway, ValidationRuleSet rules = defaultRules());
+    Validator(const TableGateway &&, ValidationRuleSet = {}) = delete;
 
     // Borrows an existing lookup, which must outlive this Validator.
-    explicit Validator(const IValidationLookup &lookup);
-    Validator(const IValidationLookup &&) = delete;
+    explicit Validator(const IValidationLookup &lookup, ValidationRuleSet rules = defaultRules());
+    Validator(const IValidationLookup &&, ValidationRuleSet = {}) = delete;
 
     // Keep the lookup binding fixed, including when it refers to the owned adapter.
     Validator(const Validator &) = delete;
@@ -46,5 +58,5 @@ public:
 private:
     std::unique_ptr<const IValidationLookup> m_ownedLookup;
     const IValidationLookup &m_lookup;
-    std::vector<std::unique_ptr<IValidationRule>> m_rules;
+    ValidationRuleSet m_rules;
 };
