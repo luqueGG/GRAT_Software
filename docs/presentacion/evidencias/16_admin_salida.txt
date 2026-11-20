@@ -1,0 +1,4 @@
+CAPTURA=C:\Users\USER\GRAT_Software\docs\presentacion\evidencias\02_menu_modulos_admin.png
+TREE=Ubicaciones,Paises,Subdivisiones,Catalogos,Componentes,Tipos de contenedores,Niveles de toxicidad,Tipos de transporte,Usuarios,Usuarios,Residuos,Empresas generadoras,Residuos,Transporte,Destinos,Empresas transportistas,Traslados
+STATUS=Rol(es): Administrador
+PID=5364

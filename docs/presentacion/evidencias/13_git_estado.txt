@@ -1,0 +1,19 @@
+## docs/rubrica-demo-evidencias...origin/main [ahead 2, behind 5]
+ M docs/presentacion/aceptacion_final.md
+?? build-rubrica-app/
+?? build-rubrica/
+?? docs/presentacion/evidencias/
+?? docs/presentacion/matriz_rubrica.md
+docs/rubrica-demo-evidencias
+e4361a9 Preparar datos ficticios reproducibles para la demo
+222c45e Definir el guion y los escenarios de demostracion
+16abf09 Merge pull request #8 from luqueGG/feature/rubrica-mvc-repository
+7a509f0 Merge pull request #9 from luqueGG/reportes-operativos
+8c5c779 Documentar el uso y medir el impacto del reporte
+140f148 Probar filtros permisos y exportacion de reportes
+b2b53ce Agregar la vista de reportes y su navegacion
+e7015da Implementar consultas de reportes con filtros y permisos
+
+* docs/rubrica-demo-evidencias
+
+
