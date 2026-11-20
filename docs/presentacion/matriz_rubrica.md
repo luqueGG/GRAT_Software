@@ -13,6 +13,12 @@ Fuentes consultadas:
 - Commits P5 locales de `docs/rubrica-demo-evidencias`.
 - Resultados reales registrados en `aceptacion_final.md`.
 
+> **Actualizacion (19-11-2026):** por instruccion del usuario, la base de
+> integracion y el destino del Pull Request son `origin/main` (`feb53db`). Los
+> cinco commits nuevos se integraron con el merge local `71fda80`. La matriz
+> original se conserva como registro y se amplia en la seccion 5 con el estado
+> posterior a la integracion.
+
 ## 1. Matriz de criterios
 
 | Criterio / etiqueta operativa | Aporte localizado en Git | Evidencia documental | Verificacion P5 | Estado P5 |
@@ -58,3 +64,22 @@ El hash del commit 3 es `22178a1`. El hash del commit 4 se confirma con
   `E984D59668BC24823D286B1AFEA710ADD7165D8331FF516EA7CB925F596B4A9D`.
 - No se abrio PR ni se realizo merge. La rama destino `improvements/final` no
   existe en `origin`, por lo que la publicacion queda condicionada.
+
+## 5. Estado posterior a la integracion con `origin/main`
+
+| Criterio | Situacion tras el merge `71fda80` |
+|---|---|
+| Arquitectura MVC, repositorio y observer (P1) | Sin cambios; entregables P5 intactos |
+| Diseno POO y estrategias de validacion (P2) | Los cinco commits de `origin/main` ya estan integrados. La compilacion y CTest pasan, pero no se ejecutaron escenarios GUI nuevos; no se marca como verificada en interfaz |
+| Calidad, manejo de errores y resiliencia (P3) | Sin cambios; escenarios de fallo siguen pendientes en P5 |
+| Innovacion funcional y reportes operativos (P4) | Sin cambios; AC-10 aprobado y AC-11 verificado manualmente por el usuario |
+| Demostracion, datos y aceptacion (P5) | Cuatro commits originales preservados mas el merge de integracion; documentacion ampliada con resultados reales |
+| Herramientas, build y verificacion (P6) | Verificacion integral repetida una sola vez: build de pruebas 16/16, build de app 16/16 y CTest `1/1 passed` |
+
+Nuevas evidencias de integracion: `evidencias/19_integracion_ctest.txt`,
+`evidencias/20_integracion_build.txt`, `evidencias/21_integracion_git.txt`,
+`evidencias/22_integracion_entregables.txt` y
+`evidencias/23_integracion_resumen.txt`.
+
+El PR se crea hacia `main`, sin merge. Los casos pendientes no se marcan como
+aprobados.

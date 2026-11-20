@@ -1,0 +1,43 @@
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+-- Configuring done (0.3s)
+-- Generating done (0.0s)
+-- Build files have been written to: C:/Users/USER/GRAT_Software/build-rubrica
+=== CMAKE BUILD TESTS ===
+[1/16] Automatic MOC and UIC for target grat_software
+[2/16] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/validation/table_gateway_validation_lookup.cpp.obj
+[3/16] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/validator.cpp.obj
+[4/16] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/repositories/sql_record_repository.cpp.obj
+[5/16] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/validation/record_validation_rules.cpp.obj
+[6/16] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/validation/field_validation_rules.cpp.obj
+[7/16] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/controllers/child_crud_controller.cpp.obj
+[8/16] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/controllers/crud_controller.cpp.obj
+[9/16] Building CXX object CMakeFiles/grat_software.dir/grat_software_autogen/mocs_compilation.cpp.obj
+[10/16] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/table_gateway.cpp.obj
+[11/16] Building CXX object CMakeFiles/grat_software.dir/src/ui/admin_roles_widget.cpp.obj
+[12/16] Building CXX object CMakeFiles/grat_software.dir/src/ui/register_form.cpp.obj
+[13/16] Building CXX object CMakeFiles/grat_software.dir/src/ui/main_window.cpp.obj
+[14/16] Building CXX object CMakeFiles/grat_software.dir/src/ui/crud_widget.cpp.obj
+[15/16] Building CXX object CMakeFiles/grat_software.dir/src/ui/master_detail_widget.cpp.obj
+[16/16] Linking CXX executable grat_software.exe
+=== CMAKE CONFIGURE APP ===
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+-- Configuring done (0.2s)
+-- Generating done (0.0s)
+-- Build files have been written to: C:/Users/USER/GRAT_Software/build-rubrica-app
+=== CMAKE BUILD APP ===
+[1/16] Automatic MOC and UIC for target grat_software
+[2/16] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/validation/table_gateway_validation_lookup.cpp.obj
+[3/16] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/validator.cpp.obj
+[4/16] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/repositories/sql_record_repository.cpp.obj
+[5/16] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/controllers/child_crud_controller.cpp.obj
+[6/16] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/validation/record_validation_rules.cpp.obj
+[7/16] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/validation/field_validation_rules.cpp.obj
+[8/16] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/controllers/crud_controller.cpp.obj
+[9/16] Building CXX object CMakeFiles/grat_software.dir/grat_software_autogen/mocs_compilation.cpp.obj
+[10/16] Building CXX object CMakeFiles/grat_software.dir/src/core/crud/table_gateway.cpp.obj
+[11/16] Building CXX object CMakeFiles/grat_software.dir/src/ui/register_form.cpp.obj
+[12/16] Building CXX object CMakeFiles/grat_software.dir/src/ui/admin_roles_widget.cpp.obj
+[13/16] Building CXX object CMakeFiles/grat_software.dir/src/ui/main_window.cpp.obj
+[14/16] Building CXX object CMakeFiles/grat_software.dir/src/ui/crud_widget.cpp.obj
+[15/16] Building CXX object CMakeFiles/grat_software.dir/src/ui/master_detail_widget.cpp.obj
+[16/16] Linking CXX executable grat_software.exe

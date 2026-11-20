@@ -30,6 +30,15 @@ presentacion.
 | `16_admin_salida.txt` | Estado del rol y arbol de modulos del administrador |
 | `17_verificacion_integral.txt` | Salida de la verificacion automatizada integral final |
 | `18_aislamiento.txt` | Comprobacion de rutas y hash de la base original |
+| `19_integracion_ctest.txt` | CTest sobre la version integrada con `origin/main` |
+| `20_integracion_build.txt` | CMake/Ninja sobre la version integrada |
+| `21_integracion_git.txt` | Rama, commits y hash de la base tras el merge |
+| `22_integracion_entregables.txt` | Comprobacion de los seis entregables P5 |
+| `23_integracion_resumen.txt` | Resumen de la verificacion integral post-merge |
+
+Los archivos `11` a `18` corresponden a la aceptacion sobre `16abf09`; los
+archivos `19` a `23` corresponden a la verificacion unica realizada despues de
+integrar `origin/main`.
 
 Los archivos `11_ctest_salida.txt`, `12_build_salida.txt` y
 `17_verificacion_integral.txt` pueden contener parte del mismo resultado: el

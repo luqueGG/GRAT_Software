@@ -1,0 +1,1 @@
+tools/demo/prepare_demo_db.py = True

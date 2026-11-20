@@ -1,0 +1,16 @@
+=== VERIFICACION INTEGRAL TRAS MERGE DE ORIGIN/MAIN - 2026-11-19 ===
+=== COMMIT INTEGRADO ===
+71fda80 Integrar origin/main en la rama de demostracion P5
+## docs/rubrica-demo-evidencias...origin/main [ahead 5]
+?? build-rubrica-app/
+?? build-rubrica/
+=== CMAKE CONFIGURE TESTS ===
+=== CTEST LIST ===
+Internal ctest changing into directory: C:/Users/USER/GRAT_Software/build-rubrica
+Test project C:/Users/USER/GRAT_Software/build-rubrica
+  Test #1: test_reportes
+
+Total Tests: 1
+=== CTEST RUN ===
+=== ENTREGABLES ===
+=== GIT Y AISLAMIENTO ===

@@ -4,6 +4,14 @@ Estado del documento: **aceptacion parcial con resultados reales registrados el
 19 de noviembre de 2026**. Los casos no ejecutados permanecen como `Pendiente`;
 no se han marcado como aprobados casos diferentes a los verificados.
 
+> **Nota de integracion (19-11-2026):** la base de integracion y el destino del
+> Pull Request cambiaron a `origin/main` (`feb53db`). El merge local es
+> `71fda80`. Las secciones 1 a 8 se conservan como registro historico de la
+> aceptacion ejecutada sobre `16abf09`. La verificacion automatizada integral se
+> repitio una sola vez sobre la version integrada y se documenta en la seccion
+> 9. No se abrio de nuevo el dialogo de exportacion CSV y los casos pendientes
+> no se marcaron como aprobados.
+
 ## 1. Version bajo prueba
 
 | Dato | Valor |
@@ -274,3 +282,77 @@ Antes de hacer push o abrir el PR deben cumplirse:
 
 Mientras la condicion 4 no se cumpla, los commits se conservan localmente y no
 se crea el PR. No se realiza merge.
+
+## 9. Integracion con `origin/main` y verificacion final
+
+Tras la instruccion del usuario de usar `origin/main` como base y destino del
+PR, se hicieron `git fetch origin` y una revision de los cinco commits nuevos:
+
+| Commit | Descripcion |
+|---|---|
+| `3ef32b7` | Desacoplar las consultas de existencia del validador |
+| `a336885` | Extraer reglas de campos con una interfaz comun |
+| `e1a5f20` | Componer estrategias para unicidad y relaciones hijas |
+| `77a9ee1` | Documentar el polimorfismo y la propiedad de las reglas |
+| `feb53db` | Merge del PR #10 (`feature/stragy-polimorfismo`) |
+
+El cambio se incorporo con `git merge --no-ff origin/main`, generando el merge
+local `71fda80`. No hubo conflictos y no se reescribio el historial ajeno. El
+merge toco unicamente `GRAT_Software/CMakeLists.txt`,
+`GRAT_Software/cmake/features/validacion.cmake`,
+`GRAT_Software/docs/arquitectura/strategy_poo.md` y archivos bajo
+`GRAT_Software/src/core/crud/`; no toco `docs/presentacion/` ni
+`tools/demo/`.
+
+Los seis entregables P5 se compararon con `git hash-object` antes y despues del
+merge y permanecieron **byte a byte intactos**:
+
+| Archivo | Hash |
+|---|---|
+| `docs/presentacion/guion_demo.md` | `f0536fb595c04be9c73ae0942969df8e81edb2c3` |
+| `docs/presentacion/datos_demo.md` | `868b641b6c1f059cf27cca32f48c0f698c6f626f` |
+| `docs/presentacion/aceptacion_final.md` | `88ba60d2cfae3d4133ae6557647c6c1af998e65d` |
+| `docs/presentacion/matriz_rubrica.md` | `824adf89ac9d92f5bb5fc78b6f671ea56df7a763` |
+| `docs/presentacion/evidencias/README.md` | `66686d5f9dce959ddaee7d26fe944dacaa3fadb7` |
+| `tools/demo/prepare_demo_db.py` | `b0a078e98f6216c9e22c55d0496d52864430ae05` |
+
+Nota: los hashes de los tres documentos actualizados en esta seccion
+corresponden al estado anterior al addendo; el contenido anterior se conserva y
+se amplia.
+
+### 9.1 Verificacion automatizada integral sobre la version integrada
+
+Se ejecuto **una sola vez** tras el merge, con `C:\Qt\6.12.0\mingw_64\bin` en
+`PATH`:
+
+| Operacion | Resultado |
+|---|---|
+| Configurar build de pruebas | Correcto |
+| Compilar build de pruebas con las nuevas reglas de validacion | Correcto, 16/16 pasos |
+| `ctest -N` | 1 prueba descubierta: `test_reportes` |
+| `ctest --output-on-failure` | `1/1 Test #1: test_reportes .... Passed`, `100% tests passed, 0 tests failed out of 1` |
+| Configurar build de aplicacion | Correcto |
+| Compilar aplicacion (`BUILD_TESTING=OFF`) | Correcto, 16/16 pasos |
+| Comprobacion de los seis entregables P5 | Todos presentes |
+| Hash de `GRAT_Software/db/grat.db` | `E984D59668BC24823D286B1AFEA710ADD7165D8331FF516EA7CB925F596B4A9D` (sin cambios) |
+
+Evidencia: `evidencias/19_integracion_ctest.txt`,
+`evidencias/20_integracion_build.txt`,
+`evidencias/21_integracion_git.txt`,
+`evidencias/22_integracion_entregables.txt` y
+`evidencias/23_integracion_resumen.txt`.
+
+### 9.2 Estado de casos tras la integracion
+
+- No se ejecutaron nuevas pruebas graficas. No se abrio el cuadro
+  `Guardar CSV`.
+- AC-11 conserva su estado de **Aprobado (verificacion manual del usuario)**.
+- AC-02, AC-03, AC-04, AC-05, AC-06, AC-07 y AC-09 permanecen **Pendiente**.
+- AC-12 se considera verificado sobre la version integrada por la seccion 9.1.
+- INC-01 queda resuelta: el destino es `origin/main`.
+- INC-03 queda resuelta: los cinco commits nuevos ya estan integrados y
+  compilados.
+- INC-02 permanece abierta: no existe el archivo de rubrica oficial.
+
+La rama local quedo con cinco commits propios (los cuatro de P5 mas el merge)
+y lista para push y PR hacia `main`. No se realizo merge del Pull Request.

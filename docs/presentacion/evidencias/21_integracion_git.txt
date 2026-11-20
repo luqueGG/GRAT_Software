@@ -1,0 +1,20 @@
+## docs/rubrica-demo-evidencias...origin/main [ahead 5]
+?? build-rubrica-app/
+?? build-rubrica/
+?? docs/presentacion/evidencias/19_integracion_ctest.txt
+?? docs/presentacion/evidencias/20_integracion_build.txt
+?? docs/presentacion/evidencias/22_integracion_entregables.txt
+71fda80 Integrar origin/main en la rama de demostracion P5
+4f7ea91 Relacionar evidencias y aportes con la rubrica
+22178a1 Registrar la aceptacion de la version integrada
+feb53db Merge pull request #10 from luqueGG/feature/stragy-polimorfismo
+77a9ee1 Documentar el polimorfismo y la propiedad de las reglas
+e1a5f20 Componer estrategias para unicidad y relaciones hijas
+a336885 Extraer reglas de campos con una interfaz com├║n
+3ef32b7 Desacoplar las consultas de existencia del validador
+
+  origin/HEAD -> origin/main
+  origin/main
+
+
+SHA256_db/grat.db=E984D59668BC24823D286B1AFEA710ADD7165D8331FF516EA7CB925F596B4A9D
