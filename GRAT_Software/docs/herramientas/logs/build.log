@@ -1,0 +1,20 @@
+[23/42] Linking CXX static library libgrat_core.a
+[24/42] Automatic MOC and UIC for target grat_software
+[25/42] Automatic RCC for resources/grat_resources.qrc
+[26/42] Automatic RCC for resources/grat_schema.qrc
+[27/42] Building CXX object CMakeFiles/grat_software.dir/grat_software_autogen/3YJK5W5UP7/qrc_grat_resources.cpp.o
+[28/42] Building CXX object CMakeFiles/grat_software.dir/grat_software_autogen/3YJK5W5UP7/qrc_grat_schema.cpp.o
+[29/42] Building CXX object tests/reportes/CMakeFiles/test_reportes.dir/test_reportes.cpp.o
+[30/42] Linking CXX executable tests/reportes/test_reportes
+[31/42] Building CXX object CMakeFiles/grat_software.dir/src/ui/visual_icons.cpp.o
+[32/42] Building CXX object CMakeFiles/grat_software.dir/src/ui/visual_text.cpp.o
+[33/42] Building CXX object CMakeFiles/grat_software.dir/src/ui/login_dialog.cpp.o
+[34/42] Building CXX object CMakeFiles/grat_software.dir/src/main.cpp.o
+[35/42] Building CXX object CMakeFiles/grat_software.dir/grat_software_autogen/mocs_compilation.cpp.o
+[36/42] Building CXX object CMakeFiles/grat_software.dir/src/ui/admin_roles_widget.cpp.o
+[37/42] Building CXX object CMakeFiles/grat_software.dir/src/ui/reports/reports_widget.cpp.o
+[38/42] Building CXX object CMakeFiles/grat_software.dir/src/ui/register_form.cpp.o
+[39/42] Building CXX object CMakeFiles/grat_software.dir/src/ui/main_window.cpp.o
+[40/42] Building CXX object CMakeFiles/grat_software.dir/src/ui/crud_widget.cpp.o
+[41/42] Building CXX object CMakeFiles/grat_software.dir/src/ui/master_detail_widget.cpp.o
+[42/42] Linking CXX executable grat_software

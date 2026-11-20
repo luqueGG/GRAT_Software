@@ -17,52 +17,95 @@ de metadatos, con autenticación y control de acceso basado en permisos (RBAC).
 ## Stack
 
 - **C++20**
-- **Qt 6** — Widgets + Sql
+- **Qt 6** — Widgets + Sql + Svg
 - **SQLite** a través del driver `QSQLITE`
-- **CMake ≥ 3.16** + **Ninja**
+- **CMake ≥ 3.16**
 
 ## Requisitos
 
+### Obligatorios
+
 - Compilador con soporte de C++20 (probado con `g++ 15.2.0`).
-- Qt 6 con los módulos **Widgets** y **Sql**, y el driver **QSQLITE**.
+- Qt 6 con los módulos **Widgets**, **Sql**, **Svg** y el driver **QSQLITE**.
 - CMake 3.16 o superior.
-- Ninja.
+
+### Opcionales
+
+- **Ninja** (recomendado; el proyecto también compila con el generador por
+defecto de CMake).
+- **Qt Test** cuando se habilitan las pruebas con `BUILD_TESTING=ON` (incluido
+en `qt6-base-dev` en Ubuntu/Debian).
 
 En Ubuntu/Debian, por ejemplo:
 
 ```bash
-sudo apt install build-essential cmake ninja-build qt6-base-dev libqt6sql6-sqlite
+sudo apt install build-essential cmake ninja-build qt6-base-dev libqt6sql6-sqlite qt6-svg-dev
 ```
 
 Si Qt está en una ruta no estándar, añade `-DCMAKE_PREFIX_PATH=<ruta a Qt>` al
 configurar.
 
-## Cómo compilar
+## Estructura del repositorio
 
-```bash
-cmake -G Ninja -B build -S GRAT_Software
-cmake --build build --clean-first
+```text
+.
+├── README.md
+└── GRAT_Software/
+    ├── CMakeLists.txt
+    ├── db/
+    ├── docs/
+    ├── resources/
+    ├── src/
+    └── tests/
 ```
 
-Para compilar con todos los avisos activados:
+El archivo `CMakeLists.txt` se encuentra dentro de `GRAT_Software/`, no en la raíz
+del repositorio.
+
+## Cómo compilar
+
+Desde la raíz del repositorio:
+
+### Solo la aplicación (sin pruebas)
 
 ```bash
-cmake -G Ninja -B build -S GRAT_Software -DCMAKE_CXX_FLAGS="-Wall -Wextra"
-cmake --build build --clean-first
+cmake -S GRAT_Software -B build -G Ninja -DBUILD_TESTING=OFF
+cmake --build build
+```
+
+### Aplicación y pruebas
+
+```bash
+cmake -S GRAT_Software -B build -G Ninja -DBUILD_TESTING=ON
+cmake --build build
+```
+
+Para listar los tests registrados:
+
+```bash
+ctest --test-dir build -N
+```
+
+Para ejecutarlos:
+
+```bash
+ctest --test-dir build --output-on-failure
 ```
 
 El ejecutable queda en `build/grat_software`.
 
 ## Cómo ejecutar
 
+La aplicación abre la base de datos `db/grat.db` de forma relativa al directorio
+desde el que se lanza. Por tanto, se debe ejecutar desde dentro de
+`GRAT_Software/`:
+
 ```bash
 cd GRAT_Software
 ../build/grat_software
 ```
 
-La aplicación abre la base de datos `db/grat.db` de forma relativa al directorio
-desde el que se lanza; con el comando anterior, la base queda en
-`GRAT_Software/db/grat.db`.
+Con el comando anterior, la base queda en `GRAT_Software/db/grat.db`.
 
 ## Base de datos
 
@@ -111,35 +154,10 @@ nunca se guarda.
 - **Protección ante caída de la base de datos**: se deshabilitan las acciones de
   mantenimiento y se rehabilitan al recuperar la conexión.
 
-## Estructura del proyecto
-
-```text
-.
-├── CMakeLists.txt
-├── README.md
-└── GRAT_Software/
-    ├── CMakeLists.txt
-    ├── .gitignore
-    ├── docs/
-    │   └── verificacion/
-    ├── resources/
-    │   ├── grat_schema.qrc
-    │   └── grat_schema.sqlite.sql
-    └── src/
-        ├── main.cpp
-        ├── app/
-        │   └── session.h
-        ├── core/
-        │   ├── auth/      # login, sesión y comprobación de permisos
-        │   ├── crud/      # TableSpec, TableGateway y Validator
-        │   ├── db/        # conexión SQLite y ciclo de vida
-        │   └── errors/    # manejador central de errores
-        └── ui/            # login, ventana principal, CRUD, maestro-detalle y roles
-```
-
 ## Flujo de trabajo del equipo
 
-- Una rama por persona: `feature/`.
+- Una rama por persona: `feature/`, `build/`, `test/` o `docs/` según la
+  actividad.
 - No se versionan `build/`, `db/`, los archivos `*.db` ni `.kiro/`.
 
 ## Verificación
@@ -151,4 +169,3 @@ Los resultados de verificación están en
 - `build_antes.log` / `build_despues.log` — compilación con `-Wall -Wextra`.
 - `build_warnings.md` — clasificación de warnings.
 - `capturas/` — capturas de las pruebas de interfaz.
-
