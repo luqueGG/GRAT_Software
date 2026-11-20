@@ -55,3 +55,5 @@ endfunction()
 
 grat_add_core_test(test_core_fixtures test_core_fixtures.cpp)
 grat_add_core_test(test_validator test_validator.cpp)
+grat_add_core_test(test_permissions test_permissions.cpp)
+grat_add_core_test(test_controllers test_controllers.cpp)
