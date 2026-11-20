@@ -22,6 +22,7 @@
 #include "core/db/database.h"
 #include "ui/crud_widget.h"
 #include "ui/admin_roles_widget.h"
+#include "ui/reports/reports_widget.h"
 #include "ui/visual_icons.h"
 #include "ui/visual_text.h"
 #include "ui_main_window.h"
@@ -121,6 +122,14 @@ void MainWindow::buildMenus()
                     [this, table] { navigateToTable(table); });
         }
     }
+
+    QMenu *reportsMenu = menuBar()->addMenu(tr("&Reportes"));
+    QAction *reportsAction = reportsMenu->addAction(tr("&Abrir reportes"));
+    connect(reportsAction, &QAction::triggered, this, [this] {
+        auto *dlg = new ReportsWidget(m_database, m_session, this);
+        dlg->setAttribute(Qt::WA_DeleteOnClose);
+        dlg->exec();
+    });
 
     QMenu *helpMenu = menuBar()->addMenu(tr("&Ayuda"));
     QAction *aboutAction = helpMenu->addAction(tr("&Acerca de GRAT_Software"));
