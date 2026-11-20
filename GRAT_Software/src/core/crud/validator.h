@@ -11,18 +11,13 @@
 #include <QVariantMap>
 
 #include <memory>
+#include <vector>
 
 #include "core/crud/table_spec.h"
 #include "core/crud/validation/i_validation_lookup.h"
+#include "core/crud/validation/i_validation_rule.h"
 
 class TableGateway;
-
-// A single validation problem on a single column.
-struct ValidationError
-{
-    QString column;  // SQL column name
-    QString reason;  // user-facing message
-};
 
 class Validator
 {
@@ -51,4 +46,5 @@ public:
 private:
     std::unique_ptr<const IValidationLookup> m_ownedLookup;
     const IValidationLookup &m_lookup;
+    std::vector<std::unique_ptr<IValidationRule>> m_rules;
 };
