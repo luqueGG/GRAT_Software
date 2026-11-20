@@ -56,6 +56,8 @@ target_link_libraries(grat_software PRIVATE
 )
 
 # Install defaults (optional, harmless if unused)
+include(cmake/features/arquitectura.cmake)
+
 install(TARGETS grat_software DESTINATION bin)
 
 # Optional test infrastructure (P6). Only requires Qt Test when enabled.
